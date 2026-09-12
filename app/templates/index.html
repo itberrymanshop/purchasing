@@ -1,0 +1,123 @@
+{% extends "base.html" %}{% block title %}Upload Template · Purchasing{%
+endblock %}{% block content %}
+<div class="page-head">
+  <div>
+    <div class="eyebrow">DAILY REPORT</div>
+    <h1>Upload template purchasing</h1>
+    <p>
+      Copy-paste 8 sumber ke template, lalu upload. Sistem menangani header
+      merge bulan dan cabang.
+    </p>
+  </div>
+  <a class="btn btn-outline-primary" href="/templates/download"
+    ><i class="bi bi-download"></i> Download Template</a
+  >
+</div>
+{% if error %}
+<div class="alert alert-danger">
+  <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+</div>
+{% endif %}{% if success %}
+<div class="alert alert-success">
+  <i class="bi bi-check-circle me-2"></i>{{ success }}
+</div>
+{% endif %}
+<section class="card upload-card">
+  <div class="step-grid">
+    <div>
+      <b>1</b><strong>Download</strong><span>Template Excel tetap</span>
+    </div>
+    <div><b>2</b><strong>Copy-paste</strong><span>8 sheet sumber</span></div>
+    <div><b>3</b><strong>Upload</strong><span>Validasi otomatis</span></div>
+    <div><b>4</b><strong>Proses</strong><span>Laporan matang</span></div>
+  </div>
+  <form
+    method="post"
+    action="/upload"
+    enctype="multipart/form-data"
+    id="upload-form"
+  >
+    <label class="dropzone"
+      ><i class="bi bi-file-earmark-spreadsheet"></i
+      ><strong>Upload File</strong
+      ><span>.xlsx atau .xlsm</span
+      ><input
+        type="file"
+        name="file"
+        id="file-input"
+        accept=".xlsx,.xlsm"
+        required
+    /></label>
+    <div id="file-preview" class="file-preview d-none">
+      <i class="bi bi-file-earmark-excel text-success"></i>
+      <div><strong id="file-name"></strong><small id="file-size"></small></div>
+      <span class="badge text-bg-light">Siap upload</span>
+    </div>
+    <button class="btn btn-primary mt-3" id="submit-button">
+      <i class="bi bi-play-fill"></i
+      ><span id="submit-label">Validasi & Proses</span>
+    </button>
+    <div id="loading-box" class="loading-box d-none">
+      <div
+        class="spinner-border spinner-border-sm text-primary"
+        role="status"
+      ></div>
+      <span>Sedang upload dan memproses laporan. Jangan tutup halaman...</span>
+    </div>
+  </form>
+</section>
+<script>
+  const input = document.getElementById("file-input");
+  const preview = document.getElementById("file-preview");
+  const form = document.getElementById("upload-form");
+  const button = document.getElementById("submit-button");
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+    if (!file) {
+      preview.classList.add("d-none");
+      return;
+    }
+    document.getElementById("file-name").textContent = file.name;
+    document.getElementById("file-size").textContent =
+      (file.size / 1024 / 1024).toFixed(2) + " MB";
+    preview.classList.remove("d-none");
+  });
+  form.addEventListener("submit", () => {
+    if (!input.files[0]) return;
+    button.disabled = true;
+    document.getElementById("submit-label").textContent = "Sedang memproses...";
+    button.querySelector("i").className = "bi bi-hourglass-split";
+    document.getElementById("loading-box").classList.remove("d-none");
+  });
+</script>
+{% if validation %}
+<section class="card mt-3">
+  <div class="card-body">
+    <h2 class="h5">Hasil validasi sheet</h2>
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Sheet</th>
+            <th>Mapping</th>
+            <th>Baris</th>
+            <th>Header terdeteksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sheet in validation %}
+          <tr>
+            <td>{{ sheet.name }}</td>
+            <td>
+              <span class="badge text-bg-success">{{ sheet.expected }}</span>
+            </td>
+            <td>{{ sheet.rows }}</td>
+            <td>{{ sheet.headers|join(' · ') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endif %}{% endblock %}

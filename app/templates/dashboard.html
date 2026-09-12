@@ -1,0 +1,757 @@
+{% extends "base.html" %} {% block title %}Dashboard · Purchasing{% endblock %}
+{% block content %}
+<div class="dashboard-hero dashboard-hero-desktop">
+  <div>
+    <div class="eyebrow">LAPORAN AKTIF</div>
+    <h1>Dashboard Purchasing</h1>
+    <p>
+      {% if report %}Update {{ report.processed_at }} · {{ report.filename }}{%
+      else %}Belum ada laporan diproses.{% endif %}
+    </p>
+  </div>
+  <div class="dashboard-widgets"><div class="date-widget"><i class="bi bi-calendar3"></i><div><small id="today-label">Hari ini</small><strong id="today-date">-</strong></div></div><div class="clock-widget"><i class="bi bi-clock"></i><strong id="digital-clock">00:00:00</strong><small>Waktu lokal</small></div><a class="btn btn-light btn-sm" href="/" ><i class="bi bi-cloud-arrow-up"></i> Upload Baru</a></div>
+</div>
+
+<div class="dashboard-kpis status-kpis"><div class="col-6 col-xl"><div class="card metric-card metric-primary"><div class="metric-icon"><i class="bi bi-boxes"></i></div><div class="text-muted small">Total SKU</div><div class="metric">{{ summary.total }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-danger"><div class="metric-icon"><i class="bi bi-exclamation-triangle"></i></div><div class="text-muted small">Critical</div><div class="metric">{{ summary.critical }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-warning"><div class="metric-icon"><i class="bi bi-cart-plus"></i></div><div class="text-muted small">Need Order</div><div class="metric">{{ summary.need_order }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-success"><div class="metric-icon"><i class="bi bi-shield-check"></i></div><div class="text-muted small">Sufficient</div><div class="metric">{{ summary.sufficient }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-primary"><div class="metric-icon"><i class="bi bi-cash-stack"></i></div><div class="text-muted small">Total Omzet</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.omzet).replace(',', '.') }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-blue"><div class="metric-icon"><i class="bi bi-globe"></i></div><div class="text-muted small">Omzet Impor</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.impor).replace(',', '.') }}</div><small class="metric-share">{{ '%.1f'|format(summary.impor_pct) }}% dari total omzet</small></div></div><div class="col-6 col-xl"><div class="card metric-card metric-green"><div class="metric-icon"><i class="bi bi-house"></i></div><div class="text-muted small">Omzet Lokal</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.lokal).replace(',', '.') }}</div><small class="metric-share">{{ '%.1f'|format(summary.lokal_pct) }}% dari total omzet</small></div></div><div class="col-6 col-xl"><div class="card metric-card metric-pm"><div class="metric-icon"><i class="bi bi-receipt"></i></div><div class="text-muted small">Omzet PM</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.pm).replace(',', '.') }}</div><small class="metric-share">{{ '%.1f'|format(summary.pm_pct) }}% dari total omzet</small></div></div><div class="col-6 col-xl"><div class="card metric-card metric-np"><div class="metric-icon"><i class="bi bi-receipt-cutoff"></i></div><div class="text-muted small">Omzet NP</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.np).replace(',', '.') }}</div><small class="metric-share">{{ '%.1f'|format(summary.np_pct) }}% dari total omzet</small></div></div></div>
+
+{% if report %}
+<section class="revenue-compare"><article class="card revenue-card"><header class="revenue-card-head"><div class="eyebrow">KOMPOSISI OMZET</div><h2>Impor vs Lokal</h2></header><div class="donut-chart-wrap"><canvas id="import-local-chart"></canvas></div><div class="donut-breakdown"><div><span class="dot dot-blue"></span><small>Impor</small><strong>Rp {{ '{:,.0f}'.format(summary.impor).replace(',', '.') }}</strong><em>{{ '%.1f'|format(summary.impor_pct) }}%</em></div><div><span class="dot dot-green"></span><small>Lokal</small><strong>Rp {{ '{:,.0f}'.format(summary.lokal).replace(',', '.') }}</strong><em>{{ '%.1f'|format(summary.lokal_pct) }}%</em></div></div></article><article class="card revenue-card"><header class="revenue-card-head"><div class="eyebrow">KOMPOSISI PAJAK</div><h2>PM vs NP</h2></header><div class="donut-chart-wrap"><canvas id="pm-np-chart"></canvas></div><div class="donut-breakdown"><div><span class="dot dot-sky"></span><small>PM</small><strong>Rp {{ '{:,.0f}'.format(summary.pm).replace(',', '.') }}</strong><em>{{ '%.1f'|format(summary.pm_pct) }}%</em></div><div><span class="dot dot-amber"></span><small>NP</small><strong>Rp {{ '{:,.0f}'.format(summary.np).replace(',', '.') }}</strong><em>{{ '%.1f'|format(summary.np_pct) }}%</em></div></div></article></section>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script><script>window.addEventListener('load',()=>{const donutLabelsPlugin={id:'donutLabels',afterDraw(chart){const dataset=chart.data.datasets[0];const meta=chart.getDatasetMeta(0);const total=dataset.data.reduce((sum,value)=>sum+value,0);const ctx=chart.ctx;const colors=dataset.backgroundColor;ctx.save();ctx.font='600 10px Manrope, Arial, sans-serif';ctx.textBaseline='middle';meta.data.forEach((arc,index)=>{const angle=(arc.startAngle+arc.endAngle)/2;const startRadius=arc.outerRadius+3;const lineRadius=arc.outerRadius+11;const x1=arc.x+Math.cos(angle)*startRadius;const y1=arc.y+Math.sin(angle)*startRadius;const x2=arc.x+Math.cos(angle)*lineRadius;const y2=arc.y+Math.sin(angle)*lineRadius;const right=Math.cos(angle)>=0;const x3=x2+(right?10:-10);const percent=total?((dataset.data[index]/total)*100).toFixed(1):'0.0';ctx.strokeStyle=colors[index];ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y2);ctx.stroke();ctx.fillStyle='#68756d';ctx.textAlign=right?'left':'right';ctx.fillText(`${chart.data.labels[index]} ${percent}%`,x3+(right?4:-4),y2);});ctx.restore();}};const donutOptions={responsive:true,maintainAspectRatio:false,cutout:'68%',layout:{padding:{left:70,right:70,top:10,bottom:10}},plugins:{legend:{display:false},tooltip:{callbacks:{label:(context)=>{const total=context.dataset.data.reduce((sum,value)=>sum+value,0);const value=context.raw||0;return ` ${context.label}: Rp ${new Intl.NumberFormat('id-ID').format(value)} (${total?((value/total)*100).toFixed(1):0}%)`;}}}}};const importCanvas=document.getElementById('import-local-chart');const taxCanvas=document.getElementById('pm-np-chart');if(window.Chart&&importCanvas)new Chart(importCanvas,{type:'doughnut',plugins:[donutLabelsPlugin],data:{labels:['Impor','Lokal'],datasets:[{data:[{{ summary.impor }},{{ summary.lokal }}],backgroundColor:['#2563eb','#16a34a'],borderWidth:0}]},options:donutOptions});if(window.Chart&&taxCanvas)new Chart(taxCanvas,{type:'doughnut',plugins:[donutLabelsPlugin],data:{labels:['PM','NP'],datasets:[{data:[{{ summary.pm }},{{ summary.np }}],backgroundColor:['#0ea5e9','#f59e0b'],borderWidth:0}]},options:donutOptions});});</script>
+<section class="insight-grid">
+  <article class="card insight-card">
+    <div class="insight-title">
+      <h2>Trend Penjualan</h2>
+      <span>Subtotal seluruh SKU</span>
+    </div>
+    <canvas id="trend-chart" height="115"></canvas>
+  </article>
+  <article class="card insight-card">
+    <div class="insight-title">
+      <h2>Trend per Cabang</h2>
+      <span>3 bulan selesai</span>
+    </div>
+    <canvas id="branch-trend-chart" height="115"></canvas>
+  </article>
+  <article class="card insight-card">
+    <div class="insight-title">
+      <h2>Top 5 Sales Growth</h2>
+      <span>Change terbesar</span>
+    </div>
+    <div class="ranking-list">
+      {% for row in top_gainers %}
+      <div>
+        <code>{{ row.sku }}</code
+        ><span title="{{ row.name }}">{{ row.name }}</span
+        ><strong class="text-success"
+          >+{{ '{:,.0f}'.format(row.change) }}</strong
+        >
+      </div>
+      {% else %}
+      <p class="text-muted small">Belum ada gainer.</p>
+      {% endfor %}
+    </div>
+  </article>
+  <article class="card insight-card">
+    <div class="insight-title">
+      <h2>Top 5 Sales Declines</h2>
+      <span>Change terendah</span>
+    </div>
+    <div class="ranking-list">
+      {% for row in top_losers %}
+      <div>
+        <code>{{ row.sku }}</code
+        ><span title="{{ row.name }}">{{ row.name }}</span
+        ><strong class="text-danger">{{ '{:,.0f}'.format(row.change) }}</strong>
+      </div>
+      {% else %}
+      <p class="text-muted small">Belum ada loser.</p>
+      {% endfor %}
+    </div>
+  </article><article class="card insight-card"><div class="insight-title"><h2>Top 5 Highest Revenue</h2></div><div class="ranking-list">{% for row in top_revenue_desc %}<div><code>{{ row.sku }}</code><span title="{{ row.name }}">{{ row.name }}</span><strong>Rp {{ '{:,.0f}'.format(row.total_sales).replace(',', '.') }}</strong></div>{% endfor %}</div></article><article class="card insight-card"><div class="insight-title"><h2>Top 5 Lowest Revenue</h2></div><div class="ranking-list">{% for row in top_revenue_asc %}<div><code>{{ row.sku }}</code><span title="{{ row.name }}">{{ row.name }}</span><strong>Rp {{ '{:,.0f}'.format(row.total_sales).replace(',', '.') }}</strong></div>{% endfor %}</div></article>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+<script>
+  const trendLabels={{ trend_totals[:-1]|map(attribute='label')|list|tojson }};const trendValues={{ trend_totals[:-1]|map(attribute='value')|list|tojson }};new Chart(document.getElementById('trend-chart'),{type:'line',data:{labels:trendLabels,datasets:[{label:'Subtotal',data:trendValues,borderColor:'#2563eb',backgroundColor:'#dbeafe',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#2563eb'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+</script>
+<script>
+  const branchTrend={{ branch_trend|tojson }};new Chart(document.getElementById('branch-trend-chart'),{type:'line',data:{labels:branchTrend.grosir.map(item=>item.label),datasets:[{label:'Grosir',data:branchTrend.grosir.map(item=>item.value),borderColor:'#2563eb',tension:.35},{label:'Marketplace',data:branchTrend.marketplace.map(item=>item.value),borderColor:'#d97706',tension:.35},{label:'Klevo',data:branchTrend.klevo.map(item=>item.value),borderColor:'#16a34a',tension:.35}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},scales:{y:{beginAtZero:true}}}});
+</script>
+<section class="card ads-section"><div class="restock-header"><div><div class="eyebrow">ANALISIS COVERAGE</div><h2>ADS dan Coverage</h2><span>Rata-rata penjualan 3 bulan selesai untuk dasar coverage</span></div></div><div class="table-responsive"><table class="table align-middle restock-table"><thead><tr><th>SKU</th><th>Nama Barang</th><th>Bulan -3</th><th>Bulan -2</th><th>Bulan -1</th><th>Rata-rata 3 Bulan</th><th>Hari Bulan Berjalan</th><th>ADS</th><th>Coverage On Hand</th><th>Coverage + OTW</th><th>Status</th></tr></thead><tbody>{% for row in rows %}<tr class="{% if row.condition == 'DISCONTINUE' %}discontinue-row{% endif %}"><td><code class="sku-code">{{ row.sku }}</code></td><td class="product-name"><strong>{{ row.name }}</strong></td>{% for month in row.month_order[:3] %}<td class="num">{{ '{:,.0f}'.format(row.months.get(month|string, {}).get('subtotal', 0)) }}</td>{% endfor %}<td class="num">{{ '{:,.0f}'.format(row.calculation.average_sales|default(0)) }}</td><td class="num">{{ row.calculation.sales_days|default(0) }}</td><td class="num">{{ '%.2f'|format(row.ads|default(0)) }}</td><td class="num">{% if row.on_hand is not none %}{{ '%.1f'|format(row.on_hand) }} hari{% else %}N/A{% endif %}</td><td class="num">{% if row.on_way is not none %}{{ '%.1f'|format(row.on_way) }} hari{% else %}N/A{% endif %}</td><td><span class="status-badge status-{{ row.status|lower|replace(' ', '-') }}">{{ row.status }}</span></td></tr>{% endfor %}</tbody></table></div></section>
+{% set restock_rows = rows|selectattr('restock_qty', 'gt', 0)|list %}
+<section class="card restock-section">
+  <div class="restock-header">
+    <div>
+      <div class="eyebrow">PURCHASING ACTION</div>
+      <h2>Rekomendasi Restock</h2>
+      <span>{{ restock_rows|length }} SKU membutuhkan perhatian</span>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle restock-table" id="restock-table">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Nama Barang</th>
+          <th>JENIS</th>
+          <th>Lead Time</th>
+          <th>Coverage</th>
+          <th>Stok + OTW</th>
+          <th>Harus Stok</th>
+          <th>Saran Restock</th>
+          <th>Alasan</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in restock_rows %}{% set calc = row.calculation|default({})
+        %}
+        <tr>
+          <td><code class="sku-code">{{ row.sku }}</code></td>
+          <td class="product-name">
+            <strong>{{ row.name }}</strong
+            ><small>{{ row.supplier or '-' }}</small>
+          </td>
+          <td>
+            <span
+              class="info-badge {% if row.kind == 'IMPOR' %}impor{% else %}lokal{% endif %}"
+              >{{ row.kind }}</span
+            >
+          </td>
+          <td class="num">
+            {{ '%.0f'|format(row.lead_time|default(0)) }} hari
+          </td>
+          <td class="num">
+            {% if row.on_way is not none %}{{ '%.1f'|format(row.on_way) }}
+            hari{% else %}N/A{% endif %}
+          </td>
+          <td class="num">
+            {{ '{:,.0f}'.format(row.available + row.ordered) }}
+          </td>
+          <td class="num target-stock">
+            {{ '{:,.0f}'.format(row.target_stock|default(0)) }}
+          </td>
+          <td class="num restock-qty">
+            {{ '{:,.0f}'.format(row.restock_qty|default(0)) }}
+          </td>
+          <td class="restock-reason">
+            <button
+              type="button"
+              class="reason-button"
+              data-bs-toggle="modal"
+              data-bs-target="#reason-modal"
+              data-sku="{{ row.sku }}"
+              data-name="{{ row.name }}"
+              data-reason="{{ row.restock_reason|default('Upload ulang untuk menghitung restock.') }}"
+              data-lead="{{ '%.0f'|format(row.lead_time|default(0)) }}"
+              data-target="{{ '{:,.0f}'.format(row.target_stock|default(0)) }}"
+              data-current="{{ '{:,.0f}'.format(row.available + row.ordered) }}"
+              data-restock="{{ '{:,.0f}'.format(row.restock_qty|default(0)) }}"
+              data-previous="{{ '{:,.0f}'.format(calc.previous_sales|default(0)) }}"
+              data-current-sales="{{ '{:,.0f}'.format(calc.current_sales|default(0)) }}"
+              data-days="{{ calc.sales_days|default(0) }}"
+              data-available="{{ '{:,.0f}'.format(calc.available|default(0)) }}"
+              data-ordered="{{ '{:,.0f}'.format(calc.ordered|default(0)) }}"
+              data-safety="{{ calc.safety_percent|default(0) }}"
+              data-target-days="{{ '%.0f'|format(row.target_days|default(0)) }}"
+              data-ads="{{ '%.2f'|format(row.ads|default(0)) }}"
+            >
+              <i class="bi bi-info-circle"></i> Lihat alasan
+            </button>
+          </td>
+          <td>
+            <span
+              class="status-badge status-{{ row.status|lower|replace(' ', '-') }}"
+              >{{ row.status }}</span
+            >
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" class="text-center text-muted py-4">
+            Tidak ada SKU yang perlu direstock.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+<section class="card report-card">
+  <div class="report-toolbar">
+    <div>
+      <h2>Detail stok dan penjualan</h2>
+      <span
+        ><strong>{{ rows|length }}</strong> SKU · klik header bulan untuk
+        breakdown cabang</span
+      >
+    </div>
+    <div class="table-actions">
+      <button
+        class="btn btn-outline-secondary btn-sm"
+        type="button"
+        data-bs-toggle="modal"
+        data-bs-target="#column-settings"
+      >
+        <i class="bi bi-layout-three-columns"></i> Kolom
+      </button>
+      <div
+        class="modal fade"
+        id="column-settings"
+        tabindex="-1"
+        aria-labelledby="column-settings-title"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="column-settings-title">
+                Tampilkan kolom
+              </h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Tutup"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="preset-buttons">
+                <button type="button" onclick="applyPreset('ringkas')">
+                  Ringkas</button
+                ><button type="button" onclick="applyPreset('purchasing')">
+                  Purchasing</button
+                ><button type="button" onclick="applyPreset('lengkap')">
+                  Lengkap</button
+                ><button type="button" onclick="resetColumns()">Reset</button>
+              </div>
+              <div id="column-checkboxes"></div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                data-bs-dismiss="modal"
+              >
+                Selesai
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="search-box">
+        <i class="bi bi-search"></i
+        ><input
+          id="search-input"
+          placeholder="Cari SKU / nama / supplier"
+          oninput="applyFilters()"
+        />
+      </div>
+      <select id="status-filter" onchange="applyFilters()">
+        <option value="">Semua status</option>
+        <option>CRITICAL</option>
+        <option>NEED ORDER</option>
+        <option>SUFFICIENT</option>
+        <option>DISCONTINUE</option>
+      </select>
+      <select id="kind-filter" onchange="applyFilters()">
+        <option value="">Semua jenis</option>
+        <option>IMPOR</option>
+        <option>LOKAL</option>
+      </select>
+      <label class="discontinue-toggle"><input id="show-discontinue" type="checkbox" onchange="applyFilters()"><span>Tampilkan discontinue</span></label>
+      <button
+        class="btn btn-outline-secondary btn-sm"
+        type="button"
+        onclick="toggleAllMonths()"
+      >
+        <i class="bi bi-arrows-expand"></i> Bulan
+      </button>
+    </div>
+  </div>
+  <div class="table-responsive report-table-wrap">
+    <table class="table align-middle" id="report-table">
+      <thead>
+        <tr>
+          <th data-column="no" class="no-column">No.</th>
+          <th data-column="sku" class="sticky-sku">SKU</th>
+          <th data-column="name">Nama Barang</th>
+          <th data-column="supplier">Supplier</th>
+          <th data-column="cbm">CBM</th>
+          <th data-column="stock_gudang">Stok Gudang</th>
+          <th data-column="ordered">Dipesan</th>
+          <th data-column="sold">Dijual</th>
+          <th data-column="available">Stok Dapat Dijual</th>
+          <th data-column="condition">Ket. Barang</th>
+          <th data-column="kind">JENIS</th>
+          <th data-column="tax">PM / NP</th>
+          <th data-column="import">IMPOR</th>
+          {% for month in month_labels %}
+          <th
+            data-column="month{{ loop.index0 }}"
+            class="branch-column month-{{ loop.index0 }}"
+          >
+            <span>(GR)</span><small>{{ month.label }}</small>
+          </th>
+          <th
+            data-column="month{{ loop.index0 }}"
+            class="branch-column month-{{ loop.index0 }}"
+          >
+            <span>(MP)</span><small>{{ month.label }}</small>
+          </th>
+          <th
+            data-column="month{{ loop.index0 }}"
+            class="branch-column month-{{ loop.index0 }}"
+          >
+            <span>(KL)</span><small>{{ month.label }}</small>
+          </th>
+          <th data-column="month{{ loop.index0 }}" class="month-head">
+            <button
+              type="button"
+              class="month-toggle"
+              data-month-index="{{ loop.index0 }}"
+              onclick="toggleMonth({{ loop.index0 }})"
+            >
+              {{ month.label }} <i class="bi bi-chevron-down"></i>
+            </button>
+          </th>
+          {% endfor %}
+          <th data-column="stock">Stok</th>
+          <th data-column="previous">Bulan Lalu</th>
+          <th data-column="projection" class="projection-head">
+            {{ projection_label }}
+          </th>
+          <th data-column="coverage">Coverage</th>
+          <th data-column="otw">OTW</th>
+          <th data-column="change">Change</th>
+          <th data-column="omzet">Omzet</th>
+          <th data-column="target">Harus Stok</th>
+          <th data-column="restock">Saran Restock</th>
+          <th data-column="reason">Alasan</th>
+          <th data-column="status">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr data-status="{{ row.status }}" data-kind="{{ row.kind }}" data-condition="{{ row.condition }}" class="{% if row.condition == 'DISCONTINUE' %}discontinue-row{% endif %}">
+          <td data-column="no" class="no-column">{{ row.no }}</td>
+          <td data-column="sku" class="sticky-sku">
+            <code class="sku-code">{{ row.sku }}</code>
+          </td>
+          <td data-column="name" class="product-name" title="{{ row.name }}">
+            <strong>{{ row.name }}</strong
+            ><small
+              >{{ row.kind }}{% if row.tax %} · {{ row.tax }}{% endif %}{% if
+              row.pareto %} · PARETO{% endif %}</small
+            >
+          </td>
+          <td data-column="supplier">
+            <span
+              class="supplier-pill {% if not row.supplier and row.kind == 'IMPOR' %}supplier-import{% endif %}"
+              >{{ row.supplier or ('IMPOR' if row.kind == 'IMPOR' else '-')
+              }}</span
+            >
+          </td>
+          <td data-column="cbm" class="num">{{ '{:,.0f}'.format(row.cbm) }}</td>
+          <td data-column="stock_gudang" class="num">{{ '{:,.0f}'.format(row.stock_gudang) }}</td>
+          <td data-column="ordered" class="num">{{ '{:,.0f}'.format(row.ordered) }}</td>
+          <td data-column="sold" class="num">{{ '{:,.0f}'.format(row.sold) }}</td>
+          <td data-column="available" class="num">{{ '{:,.0f}'.format(row.available) }}</td>
+          <td data-column="condition">
+            <span
+              class="info-badge {% if row.condition == 'DISCONTINUE' %}discontinued{% endif %}"
+              >{{ row.condition }}</span
+            >
+          </td>
+          <td data-column="kind">
+            <span
+              class="info-badge {% if row.kind == 'IMPOR' %}impor{% else %}lokal{% endif %}"
+              >{{ row.kind }}</span
+            >
+          </td>
+          <td data-column="tax">
+            <span
+              class="info-badge {% if row.tax == 'NP' %}np{% elif row.tax == 'PM' %}pm{% endif %}"
+              >{{ row.tax or '-' }}</span
+            >
+          </td>
+          <td
+            data-column="import"
+            class="import-detail"
+            title="{{ row.import_detail }}"
+          >
+            {{ row.import_detail or '-' }}
+          </td>
+          {% for month in row.month_order %} {% set data =
+          row.months.get(month|string, {}) %}
+          <td
+            data-column="month{{ loop.index0 }}"
+            class="branch-cell month-{{ loop.index0 }}"
+          >
+            {{ '{:,.0f}'.format(data.get('grosir', 0)) }}
+          </td>
+          <td
+            data-column="month{{ loop.index0 }}"
+            class="branch-cell month-{{ loop.index0 }}"
+          >
+            {{ '{:,.0f}'.format(data.get('marketplace', 0)) }}
+          </td>
+          <td
+            data-column="month{{ loop.index0 }}"
+            class="branch-cell month-{{ loop.index0 }}"
+          >
+            {{ '{:,.0f}'.format(data.get('klevo', 0)) }}
+          </td>
+          <td
+            data-column="month{{ loop.index0 }}"
+            class="monthly-sales month-{{ loop.index0 }}"
+          >
+            <strong>{{ '{:,.0f}'.format(data.get('subtotal', 0)) }}</strong>
+          </td>
+          {% endfor %}
+          <td data-column="stock" class="num">
+            {{ '{:,.0f}'.format(row.available) }}
+          </td>
+          <td data-column="previous" class="num">
+            {{ '{:,.0f}'.format(row.previous_sales) }}
+          </td>
+          <td data-column="projection" class="num projection-value">
+            {{ '{:,.0f}'.format(row.projection) }}
+          </td>
+          <td data-column="coverage" class="num">
+            {% if row.on_hand is not none %}{{ '%.1f'|format(row.on_hand) }}
+            hr{% else %}N/A{% endif %}
+          </td>
+          <td data-column="otw" class="num">
+            {% if row.on_way is not none %}{{ '%.1f'|format(row.on_way) }} hr{%
+            else %}N/A{% endif %}
+          </td>
+          <td
+            data-column="change"
+            class="num {% if row.change > 0 %}text-success{% elif row.change < 0 %}text-danger{% endif %}"
+          >
+            {{ '{:+,.0f}'.format(row.change) }}
+          </td>
+          <td data-column="omzet" class="num omzet">
+            Rp {{ '{:,.0f}'.format(row.total_sales).replace(',', '.') }}
+          </td>
+          <td data-column="target" class="num target-stock">
+            {{ '{:,.0f}'.format(row.target_stock|default(0)) }}
+          </td>
+          <td data-column="restock" class="num restock-qty">
+            {{ '{:,.0f}'.format(row.restock_qty|default(0)) }}
+          </td>
+          <td
+            data-column="reason"
+            class="restock-reason"
+            title="{{ row.restock_reason|default('Upload ulang untuk menghitung restock.') }}"
+          >
+            {{ row.restock_reason|default('Upload ulang untuk menghitung
+            restock.') }}
+          </td>
+          <td data-column="status">
+            <span
+              class="status-badge status-{{ row.status|lower|replace(' ', '-') }}"
+              >{{ row.status }}</span
+            >
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div
+  class="modal fade"
+  id="reason-modal"
+  tabindex="-1"
+  aria-labelledby="reason-modal-title"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reason-modal-title">
+          Alasan rekomendasi restock
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Tutup"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="reason-product">
+          <code id="reason-sku"></code><strong id="reason-name"></strong>
+        </div>
+        <div class="reason-source">
+          <strong>Sumber data</strong>
+          <ul>
+            <li>Penjualan: sheet <code>PENJUALAN_PERIODE</code></li>
+            <li>Stok dapat dijual dan dipesan: sheet <code>STOK</code></li>
+            <li>Jenis barang: sheet <code>IMPOR</code></li>
+            <li>Lead time dan safety stock: <code>Settings</code></li>
+          </ul>
+        </div>
+        <p id="reason-text" class="reason-text"></p>
+        <div class="formula-box">
+          <strong>Rumus</strong
+          ><code
+             >Rata-rata penjualan = (bulan -3 + bulan -2 + bulan -1) / 3</code
+          ><code
+             >ADS = rata-rata penjualan / jumlah hari bulan berjalan</code
+          ><code
+            >Target hari aman = lead time + (lead time × safety stock %)</code
+          ><code>Harus stok = ceil(ADS × target hari aman)</code
+          ><code
+            >Saran restock = max(0, harus stok - stok dapat dijual -
+            dipesan)</code
+          >
+        </div>
+        <div class="reason-grid">
+          <div>
+            <span>Penjualan bulan lalu</span
+            ><strong id="reason-previous"></strong>
+          </div>
+          <div>
+            <span>Penjualan bulan berjalan</span
+            ><strong id="reason-current-sales"></strong>
+          </div>
+          <div>
+            <span>Total hari analisis</span><strong id="reason-days"></strong>
+          </div>
+          <div><span>ADS</span><strong id="reason-ads"></strong></div>
+          <div><span>Lead time</span><strong id="reason-lead"></strong></div>
+          <div>
+            <span>Safety stock</span><strong id="reason-safety"></strong>
+          </div>
+          <div>
+            <span>Target hari aman</span
+            ><strong id="reason-target-days"></strong>
+          </div>
+          <div>
+            <span>Target stok</span><strong id="reason-target"></strong>
+          </div>
+          <div>
+            <span>Stok dapat dijual</span
+            ><strong id="reason-available"></strong>
+          </div>
+          <div>
+            <span>Dipesan / OTW</span><strong id="reason-ordered"></strong>
+          </div>
+          <div>
+            <span>Stok + OTW</span><strong id="reason-current"></strong>
+          </div>
+          <div class="reason-highlight">
+            <span>Saran restock</span><strong id="reason-restock"></strong>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          data-bs-dismiss="modal"
+        >
+          Mengerti
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<section class="card mt-3">
+  <div class="empty-state">
+    <i class="bi bi-bar-chart-line"></i>
+    <h3>Belum ada laporan aktif</h3>
+    <a href="/" class="btn btn-primary">Upload Template</a>
+  </div>
+</section>
+{% endif %}
+<script>
+  function applyFilters() {
+    const query = (
+      document.getElementById("search-input").value || ""
+    ).toLowerCase();
+    const status = document.getElementById("status-filter").value;
+    const kind = document.getElementById("kind-filter").value;
+    const showDiscontinue = document.getElementById("show-discontinue").checked;
+    document.body.classList.toggle("show-discontinue", showDiscontinue);
+    document.querySelectorAll("#report-table tbody tr").forEach((row) => {
+      const isDiscontinue = row.dataset.condition === "DISCONTINUE";
+      const matchText = row.innerText.toLowerCase().includes(query);
+      const matchStatus = !status || row.dataset.status === status;
+      const matchKind = !kind || row.dataset.kind === kind;
+      row.style.display = !showDiscontinue && isDiscontinue ? "none" : matchText && matchStatus && matchKind ? "" : "none";
+    });
+  }
+  applyFilters();
+  function toggleMonth(index) {
+    document.body.classList.toggle("month-open-" + index);
+    const button = document.querySelector('[data-month-index="' + index + '"]');
+    button.classList.toggle("open");
+  }
+  function toggleAllMonths() {
+    const open = document.body.classList.contains("months-expanded");
+    document.body.classList.toggle("months-expanded");
+    for (let i = 0; i < 4; i++) {
+      document.body.classList.toggle("month-open-" + i, !open);
+      const button = document.querySelector('[data-month-index="' + i + '"]');
+      if (button) button.classList.toggle("open", !open);
+    }
+  }
+  function toggleColumnMenu() {
+    document.getElementById("column-menu-panel").classList.toggle("show");
+  }
+  const columnNames = {
+    no: "No.",
+    sku: "SKU",
+    name: "Nama Barang",
+    supplier: "Supplier",
+    cbm: "CBM",
+    stock_gudang: "Stok Gudang",
+    ordered: "Dipesan",
+    sold: "Dijual",
+    available: "Stok Dapat Dijual",
+    condition: "Ket. Barang",
+    kind: "JENIS",
+    tax: "PM / NP",
+    import: "IMPOR",
+    month0: "Bulan -3",
+    month1: "Bulan -2",
+    month2: "Bulan -1",
+    month3: "Bulan berjalan",
+    projection: "Proyeksi",
+    stock: "Stok",
+    previous: "Bulan Lalu",
+    coverage: "Coverage",
+    otw: "OTW",
+    change: "Change",
+    omzet: "Omzet",
+    target: "Harus Stok",
+    restock: "Saran Restock",
+    reason: "Alasan",
+    status: "Status",
+  };
+  const locked = ["sku", "status"];
+  const presets = {
+    ringkas: [
+      "sku",
+      "name",
+      "kind",
+      "month0",
+      "month1",
+      "month2",
+      "month3",
+      "projection",
+      "coverage",
+      "status",
+    ],
+    purchasing: [
+      "no",
+      "sku",
+      "name",
+      "supplier",
+      "stock_gudang",
+      "ordered",
+      "sold",
+      "available",
+      "kind",
+      "tax",
+      "month0",
+      "month1",
+      "month2",
+      "month3",
+      "projection",
+      "stock",
+      "coverage",
+      "otw",
+      "status",
+    ],
+    lengkap: Object.keys(columnNames),
+  };
+  function setColumns(columns) {
+    const active = new Set(columns);
+    document
+      .querySelectorAll("[data-column]")
+      .forEach((el) =>
+        el.classList.toggle("column-hidden", !active.has(el.dataset.column)),
+      );
+    document
+      .querySelectorAll("#column-checkboxes input")
+      .forEach((input) => (input.checked = active.has(input.value)));
+    localStorage.setItem("purchasing-columns", JSON.stringify([...active]));
+  }
+  function applyPreset(name) {
+    setColumns([...new Set([...presets[name], ...locked])]);
+  }
+  function resetColumns() {
+    localStorage.removeItem("purchasing-columns");
+    applyPreset("purchasing");
+  }
+  function initColumns() {
+    const box = document.getElementById("column-checkboxes");
+    Object.entries(columnNames).forEach(([key, label]) => {
+      const item = document.createElement("label");
+      item.className = "column-option";
+      item.innerHTML =
+        '<input type="checkbox" value="' +
+        key +
+        '" ' +
+        (locked.includes(key) ? "checked disabled" : "") +
+        "><span>" +
+        label +
+        "</span>";
+      item.querySelector("input").addEventListener("change", (e) => {
+        const active = [
+          ...document.querySelectorAll("#column-checkboxes input:checked"),
+        ].map((x) => x.value);
+        setColumns(active);
+      });
+      box.appendChild(item);
+    });
+    let saved = [];
+    try {
+      saved = JSON.parse(localStorage.getItem("purchasing-columns") || "[]");
+    } catch (e) {}
+    setColumns(saved.length ? saved : presets.purchasing);
+  }
+  initColumns();
+</script>
+<script>
+  document
+    .getElementById("reason-modal")
+    ?.addEventListener("show.bs.modal", (event) => {
+      const button = event.relatedTarget;
+      document.getElementById("reason-sku").textContent = button.dataset.sku;
+      document.getElementById("reason-name").textContent = button.dataset.name;
+      document.getElementById("reason-text").textContent =
+        button.dataset.reason;
+      document.getElementById("reason-previous").textContent =
+        button.dataset.previous + " unit";
+      document.getElementById("reason-current-sales").textContent =
+        button.dataset.currentSales + " unit";
+      document.getElementById("reason-days").textContent =
+        button.dataset.days + " hari";
+      document.getElementById("reason-ads").textContent =
+        button.dataset.ads + " unit/hari";
+      document.getElementById("reason-lead").textContent =
+        button.dataset.lead + " hari";
+      document.getElementById("reason-safety").textContent =
+        button.dataset.safety + "%";
+      document.getElementById("reason-target-days").textContent =
+        button.dataset.targetDays + " hari";
+      document.getElementById("reason-target").textContent =
+        button.dataset.target + " unit";
+      document.getElementById("reason-available").textContent =
+        button.dataset.available + " unit";
+      document.getElementById("reason-ordered").textContent =
+        button.dataset.ordered + " unit";
+      document.getElementById("reason-current").textContent =
+        button.dataset.current + " unit";
+      document.getElementById("reason-restock").textContent =
+        button.dataset.restock + " unit";
+    });
+</script><script>function updateClock(){const now=new Date();document.getElementById('today-label').textContent=now.toLocaleDateString('id-ID',{weekday:'long'});document.getElementById('today-date').textContent=now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});document.getElementById('digital-clock').textContent=now.toLocaleTimeString('id-ID',{hour12:false})}updateClock();setInterval(updateClock,1000);</script>
+{% endblock %}

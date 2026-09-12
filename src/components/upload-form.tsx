@@ -1,0 +1,6 @@
+"use client";
+import { useState } from "react";
+
+const required = ["stok", "penjualan", "harga", "discontinue", "impor", "ppn", "pareto"];
+export function UploadForm() { const [file,setFile]=useState<File|null>(null); const [message,setMessage]=useState(""); const [busy,setBusy]=useState(false); async function submit(e:React.FormEvent){e.preventDefault(); if(!file)return setMessage("Pilih file template terlebih dahulu."); setBusy(true); setMessage(""); const data=new FormData(); data.append("file",file); const res=await fetch("/api/upload",{method:"POST",body:data}); const body=await res.json(); setBusy(false); setMessage(body.message||"Upload selesai."); }
+return <section className="upload-card"><div><span className="eyebrow">IMPORT DATA</span><h2>Upload template terisi</h2><p>Pastikan 8 sheet sumber sudah berisi data terbaru sebelum upload.</p></div><form onSubmit={submit}><label className="dropzone"><input type="file" accept=".xlsx,.xlsm" onChange={e=>setFile(e.target.files?.[0]||null)}/><strong>{file?.name||"Pilih file Excel"}</strong><span>Format .xlsx atau .xlsm · maksimal 25 MB</span></label><button disabled={busy}>{busy?"Memvalidasi...":"Validasi dan proses"}</button>{message&&<p className="message">{message}</p>}</form><div className="sheet-list">{required.map((name,i)=><span key={name}><b>0{i+1}</b>{name}</span>)}</div></section>; }
