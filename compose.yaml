@@ -8,9 +8,12 @@ services:
     volumes:
       - uploads_data:/app/uploads
     environment:
-      DATABASE_URL: postgresql://purchasing:purchasing@postgres:5432/purchasing
+      DATABASE_URL: postgresql+psycopg://purchasing:purchasing@postgres:5432/purchasing
       REDIS_URL: redis://redis:6379
-      SECRET_KEY: change-me-in-production
+      SECRET_KEY: ${SECRET_KEY}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Jakarta}
     depends_on:
       postgres:
         condition: service_healthy

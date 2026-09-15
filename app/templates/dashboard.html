@@ -1,4 +1,4 @@
-{% extends "base.html" %} {% block title %}Dashboard · Purchasing{% endblock %}
+{% extends "base.html" %} {% block title %}Dashboard · Purchasing{% endblock %}{% block body_class %}{% if request.query_params.get('print') %}print-dashboard{% endif %}{% endblock %}{% block styles %}<link href="{{ url_for('static', path='css/sparkline.css') }}" rel="stylesheet" />{% if request.query_params.get('print') %}<link href="{{ url_for('static', path='css/print-dashboard.css') }}" rel="stylesheet" />{% endif %}{% endblock %}
 {% block content %}
 <div class="dashboard-hero dashboard-hero-desktop">
   <div>
@@ -12,7 +12,7 @@
   <div class="dashboard-widgets"><div class="date-widget"><i class="bi bi-calendar3"></i><div><small id="today-label">Hari ini</small><strong id="today-date">-</strong></div></div><div class="clock-widget"><i class="bi bi-clock"></i><strong id="digital-clock">00:00:00</strong><small>Waktu lokal</small></div><a class="btn btn-light btn-sm" href="/" ><i class="bi bi-cloud-arrow-up"></i> Upload Baru</a></div>
 </div>
 
-<div class="dashboard-kpis status-kpis"><div class="col-6 col-xl"><div class="card metric-card metric-primary"><div class="metric-icon"><i class="bi bi-boxes"></i></div><div class="text-muted small">Total SKU</div><div class="metric">{{ summary.total }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-danger"><div class="metric-icon"><i class="bi bi-exclamation-triangle"></i></div><div class="text-muted small">Critical</div><div class="metric">{{ summary.critical }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-warning"><div class="metric-icon"><i class="bi bi-cart-plus"></i></div><div class="text-muted small">Need Order</div><div class="metric">{{ summary.need_order }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-success"><div class="metric-icon"><i class="bi bi-shield-check"></i></div><div class="text-muted small">Sufficient</div><div class="metric">{{ summary.sufficient }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-primary"><div class="metric-icon"><i class="bi bi-cash-stack"></i></div><div class="text-muted small">Total Omzet</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.omzet).replace(',', '.') }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-blue"><div class="metric-icon"><i class="bi bi-globe"></i></div><div class="text-muted small">Omzet Impor</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.impor).replace(',', '.') }}</div><small class="metric-share">{{ '%.1f'|format(summary.impor_pct) }}% dari total omzet</small></div></div><div class="col-6 col-xl"><div class="card metric-card metric-green"><div class="metric-icon"><i class="bi bi-house"></i></div><div class="text-muted small">Omzet Lokal</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.lokal).replace(',', '.') }}</div><small class="metric-share">{{ '%.1f'|format(summary.lokal_pct) }}% dari total omzet</small></div></div><div class="col-6 col-xl"><div class="card metric-card metric-pm"><div class="metric-icon"><i class="bi bi-receipt"></i></div><div class="text-muted small">Omzet PM</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.pm).replace(',', '.') }}</div><small class="metric-share">{{ '%.1f'|format(summary.pm_pct) }}% dari total omzet</small></div></div><div class="col-6 col-xl"><div class="card metric-card metric-np"><div class="metric-icon"><i class="bi bi-receipt-cutoff"></i></div><div class="text-muted small">Omzet NP</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.np).replace(',', '.') }}</div><small class="metric-share">{{ '%.1f'|format(summary.np_pct) }}% dari total omzet</small></div></div></div>
+<div class="dashboard-kpis status-kpis"><div class="col-6 col-xl"><div class="card metric-card metric-primary"><div class="metric-icon"><i class="bi bi-boxes"></i></div><div class="text-muted small">Total SKU</div><div class="metric">{{ summary.total }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-danger"><div class="metric-icon"><i class="bi bi-exclamation-triangle"></i></div><div class="text-muted small">Kritis</div><div class="metric">{{ summary.critical }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-warning"><div class="metric-icon"><i class="bi bi-cart-plus"></i></div><div class="text-muted small">Order</div><div class="metric">{{ summary.need_order }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-success"><div class="metric-icon"><i class="bi bi-shield-check"></i></div><div class="text-muted small">Aman</div><div class="metric">{{ summary.sufficient }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-primary"><div class="metric-icon"><i class="bi bi-cash-stack"></i></div><div class="text-muted small">Total Omzet</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.omzet).replace(',', '.') }}</div></div></div><div class="col-6 col-xl"><div class="card metric-card metric-blue"><div class="metric-icon"><i class="bi bi-globe"></i></div><div class="text-muted small">Omzet Impor</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.impor).replace(',', '.') }}</div><small class="metric-share">{{ '%.1f'|format(summary.impor_pct) }}% dari total omzet</small></div></div><div class="col-6 col-xl"><div class="card metric-card metric-green"><div class="metric-icon"><i class="bi bi-house"></i></div><div class="text-muted small">Omzet Lokal</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.lokal).replace(',', '.') }}</div><small class="metric-share">{{ '%.1f'|format(summary.lokal_pct) }}% dari total omzet</small></div></div><div class="col-6 col-xl"><div class="card metric-card metric-pm"><div class="metric-icon"><i class="bi bi-receipt"></i></div><div class="text-muted small">Omzet PM</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.pm).replace(',', '.') }}</div><small class="metric-share">{{ '%.1f'|format(summary.pm_pct) }}% dari total omzet</small></div></div><div class="col-6 col-xl"><div class="card metric-card metric-np"><div class="metric-icon"><i class="bi bi-receipt-cutoff"></i></div><div class="text-muted small">Omzet NP</div><div class="metric">Rp {{ '{:,.0f}'.format(summary.np).replace(',', '.') }}</div><small class="metric-share">{{ '%.1f'|format(summary.np_pct) }}% dari total omzet</small></div></div></div>
 
 {% if report %}
 <section class="revenue-compare"><article class="card revenue-card"><header class="revenue-card-head"><div class="eyebrow">KOMPOSISI OMZET</div><h2>Impor vs Lokal</h2></header><div class="donut-chart-wrap"><canvas id="import-local-chart"></canvas></div><div class="donut-breakdown"><div><span class="dot dot-blue"></span><small>Impor</small><strong>Rp {{ '{:,.0f}'.format(summary.impor).replace(',', '.') }}</strong><em>{{ '%.1f'|format(summary.impor_pct) }}%</em></div><div><span class="dot dot-green"></span><small>Lokal</small><strong>Rp {{ '{:,.0f}'.format(summary.lokal).replace(',', '.') }}</strong><em>{{ '%.1f'|format(summary.lokal_pct) }}%</em></div></div></article><article class="card revenue-card"><header class="revenue-card-head"><div class="eyebrow">KOMPOSISI PAJAK</div><h2>PM vs NP</h2></header><div class="donut-chart-wrap"><canvas id="pm-np-chart"></canvas></div><div class="donut-breakdown"><div><span class="dot dot-sky"></span><small>PM</small><strong>Rp {{ '{:,.0f}'.format(summary.pm).replace(',', '.') }}</strong><em>{{ '%.1f'|format(summary.pm_pct) }}%</em></div><div><span class="dot dot-amber"></span><small>NP</small><strong>Rp {{ '{:,.0f}'.format(summary.np).replace(',', '.') }}</strong><em>{{ '%.1f'|format(summary.np_pct) }}%</em></div></div></article></section>
@@ -76,8 +76,8 @@
 <script>
   const branchTrend={{ branch_trend|tojson }};new Chart(document.getElementById('branch-trend-chart'),{type:'line',data:{labels:branchTrend.grosir.map(item=>item.label),datasets:[{label:'Grosir',data:branchTrend.grosir.map(item=>item.value),borderColor:'#2563eb',tension:.35},{label:'Marketplace',data:branchTrend.marketplace.map(item=>item.value),borderColor:'#d97706',tension:.35},{label:'Klevo',data:branchTrend.klevo.map(item=>item.value),borderColor:'#16a34a',tension:.35}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},scales:{y:{beginAtZero:true}}}});
 </script>
-<section class="card ads-section"><div class="restock-header"><div><div class="eyebrow">ANALISIS COVERAGE</div><h2>ADS dan Coverage</h2><span>Rata-rata penjualan 3 bulan selesai untuk dasar coverage</span></div></div><div class="table-responsive"><table class="table align-middle restock-table"><thead><tr><th>SKU</th><th>Nama Barang</th><th>Bulan -3</th><th>Bulan -2</th><th>Bulan -1</th><th>Rata-rata 3 Bulan</th><th>Hari Bulan Berjalan</th><th>ADS</th><th>Coverage On Hand</th><th>Coverage + OTW</th><th>Status</th></tr></thead><tbody>{% for row in rows %}<tr class="{% if row.condition == 'DISCONTINUE' %}discontinue-row{% endif %}"><td><code class="sku-code">{{ row.sku }}</code></td><td class="product-name"><strong>{{ row.name }}</strong></td>{% for month in row.month_order[:3] %}<td class="num">{{ '{:,.0f}'.format(row.months.get(month|string, {}).get('subtotal', 0)) }}</td>{% endfor %}<td class="num">{{ '{:,.0f}'.format(row.calculation.average_sales|default(0)) }}</td><td class="num">{{ row.calculation.sales_days|default(0) }}</td><td class="num">{{ '%.2f'|format(row.ads|default(0)) }}</td><td class="num">{% if row.on_hand is not none %}{{ '%.1f'|format(row.on_hand) }} hari{% else %}N/A{% endif %}</td><td class="num">{% if row.on_way is not none %}{{ '%.1f'|format(row.on_way) }} hari{% else %}N/A{% endif %}</td><td><span class="status-badge status-{{ row.status|lower|replace(' ', '-') }}">{{ row.status }}</span></td></tr>{% endfor %}</tbody></table></div></section>
-{% set restock_rows = rows|selectattr('restock_qty', 'gt', 0)|list %}
+<section class="card ads-section"><div class="restock-header"><div><div class="eyebrow">ANALISIS COVERAGE</div><h2>ADS dan Coverage</h2><span>Rata-rata 3 bulan histori ditambah proyeksi bulan berjalan untuk dasar coverage</span></div>{% if rows %}<div class="coverage-period"><span>Bulan berjalan</span><strong>{{ month_labels[-1].label }}</strong><b>{{ rows[0].calculation.sales_days|default(0) }} hari</b></div>{% endif %}</div><div class="table-responsive"><table class="table align-middle restock-table"><thead><tr><th>SKU</th><th>Nama Barang</th>{% for month in month_labels[:3] %}<th>{{ month.label }}</th>{% endfor %}<th>Proyeksi Bulan Berjalan</th><th>Rata-rata 3 Bulan</th><th>ADS</th><th>Coverage On Hand</th><th>Coverage + OTW</th><th>Status</th></tr></thead><tbody>{% for row in rows %}<tr class="{% if row.condition == 'DISCONTINUE' %}discontinue-row{% endif %}"><td><code class="sku-code">{{ row.sku }}</code></td><td class="product-name"><strong>{{ row.name }}</strong></td>{% for month in row.month_order[:3] %}<td class="num">{{ '{:,.0f}'.format(row.months.get(month|string, {}).get('subtotal', 0)) }}</td>{% endfor %}<td class="num">{{ '{:,.0f}'.format(row.projection|default(0)) }}</td><td class="num">{{ '{:,.0f}'.format(row.calculation.average_sales|default(0)) }}</td><td class="num">{{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.ads|default(0)) }}</td><td class="num">{% if row.on_hand is not none %}{{ ('%.' ~ display_rules.coverage_decimal_places ~ 'f')|format(row.on_hand) }} hari{% else %}N/A{% endif %}</td><td class="num">{% if row.on_way is not none %}{{ ('%.' ~ display_rules.coverage_decimal_places ~ 'f')|format(row.on_way) }} hari{% else %}N/A{% endif %}</td><td><span class="status-badge status-{{ row.status|lower|replace(' ', '-') }}">{{ {'CRITICAL': 'Kritis', 'NEED ORDER': 'Order', 'SUFFICIENT': 'Aman', 'DISCONTINUE': 'DISCONTINUE'}.get(row.status, row.status) }}</span></td></tr>{% endfor %}</tbody></table></div></section>
+{% set restock_rows = rows|selectattr('status', 'in', ['CRITICAL', 'NEED ORDER'])|list %}
 <section class="card restock-section">
   <div class="restock-header">
     <div>
@@ -93,11 +93,10 @@
           <th>SKU</th>
           <th>Nama Barang</th>
           <th>JENIS</th>
-          <th>Lead Time</th>
+          <th>Umur Persediaan</th>
           <th>Coverage</th>
           <th>Stok + OTW</th>
-          <th>Harus Stok</th>
-          <th>Saran Restock</th>
+          <th>Rekomendasi Stok</th>
           <th>Alasan</th>
           <th>Status</th>
         </tr>
@@ -109,7 +108,7 @@
           <td><code class="sku-code">{{ row.sku }}</code></td>
           <td class="product-name">
             <strong>{{ row.name }}</strong
-            ><small>{{ row.supplier or '-' }}</small>
+              ><small>{{ row.supplier or '-' }}</small>
           </td>
           <td>
             <span
@@ -118,7 +117,7 @@
             >
           </td>
           <td class="num">
-            {{ '%.0f'|format(row.lead_time|default(0)) }} hari
+            {{ '%.0f'|format(row.inventory_age|default(0)) }} hari
           </td>
           <td class="num">
             {% if row.on_way is not none %}{{ '%.1f'|format(row.on_way) }}
@@ -129,9 +128,6 @@
           </td>
           <td class="num target-stock">
             {{ '{:,.0f}'.format(row.target_stock|default(0)) }}
-          </td>
-          <td class="num restock-qty">
-            {{ '{:,.0f}'.format(row.restock_qty|default(0)) }}
           </td>
           <td class="restock-reason">
             <button
@@ -145,14 +141,13 @@
               data-lead="{{ '%.0f'|format(row.lead_time|default(0)) }}"
               data-target="{{ '{:,.0f}'.format(row.target_stock|default(0)) }}"
               data-current="{{ '{:,.0f}'.format(row.available + row.ordered) }}"
-              data-restock="{{ '{:,.0f}'.format(row.restock_qty|default(0)) }}"
+              data-restock="{{ '{:,.0f}'.format(row.target_stock|default(0)) }}"
               data-previous="{{ '{:,.0f}'.format(calc.previous_sales|default(0)) }}"
               data-current-sales="{{ '{:,.0f}'.format(calc.current_sales|default(0)) }}"
               data-days="{{ calc.sales_days|default(0) }}"
               data-available="{{ '{:,.0f}'.format(calc.available|default(0)) }}"
               data-ordered="{{ '{:,.0f}'.format(calc.ordered|default(0)) }}"
-              data-safety="{{ calc.safety_percent|default(0) }}"
-              data-target-days="{{ '%.0f'|format(row.target_days|default(0)) }}"
+              data-age="{{ '%.0f'|format(row.inventory_age|default(0)) }}"
               data-ads="{{ '%.2f'|format(row.ads|default(0)) }}"
             >
               <i class="bi bi-info-circle"></i> Lihat alasan
@@ -161,13 +156,13 @@
           <td>
             <span
               class="status-badge status-{{ row.status|lower|replace(' ', '-') }}"
-              >{{ row.status }}</span
+              >{{ {'CRITICAL': 'Kritis', 'NEED ORDER': 'Order', 'SUFFICIENT': 'Aman', 'DISCONTINUE': 'DISCONTINUE'}.get(row.status, row.status) }}</span
             >
           </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="10" class="text-center text-muted py-4">
+          <td colspan="9" class="text-center text-muted py-4">
             Tidak ada SKU yang perlu direstock.
           </td>
         </tr>
@@ -185,8 +180,8 @@
         breakdown cabang</span
       >
     </div>
-    <div class="table-actions">
-      <button
+<div class="table-actions"><a class="btn btn-outline-secondary btn-sm" href="/export/excel"><i class="bi bi-file-earmark-spreadsheet"></i> Excel</a><a class="btn btn-outline-secondary btn-sm" href="/export/pdf"><i class="bi bi-printer"></i> Cetak / PDF</a>
+       <button
         class="btn btn-outline-secondary btn-sm"
         type="button"
         data-bs-toggle="modal"
@@ -248,9 +243,9 @@
       </div>
       <select id="status-filter" onchange="applyFilters()">
         <option value="">Semua status</option>
-        <option>CRITICAL</option>
-        <option>NEED ORDER</option>
-        <option>SUFFICIENT</option>
+        <option value="CRITICAL">Kritis</option>
+        <option value="NEED ORDER">Order</option>
+        <option value="SUFFICIENT">Aman</option>
         <option>DISCONTINUE</option>
       </select>
       <select id="kind-filter" onchange="applyFilters()">
@@ -275,6 +270,7 @@
           <th data-column="no" class="no-column">No.</th>
           <th data-column="sku" class="sticky-sku">SKU</th>
           <th data-column="name">Nama Barang</th>
+          <th data-column="trend">Trend</th>
           <th data-column="supplier">Supplier</th>
           <th data-column="cbm">CBM</th>
           <th data-column="stock_gudang">Stok Gudang</th>
@@ -324,8 +320,7 @@
           <th data-column="otw">OTW</th>
           <th data-column="change">Change</th>
           <th data-column="omzet">Omzet</th>
-          <th data-column="target">Harus Stok</th>
-          <th data-column="restock">Saran Restock</th>
+          <th data-column="target">Rekomendasi Stok</th>
           <th data-column="reason">Alasan</th>
           <th data-column="status">Status</th>
         </tr>
@@ -344,6 +339,7 @@
               row.pareto %} · PARETO{% endif %}</small
             >
           </td>
+          <td data-column="trend">{% set m0 = row.months.get(row.month_order[0]|string, {}).get('subtotal', 0) %}{% set m1 = row.months.get(row.month_order[1]|string, {}).get('subtotal', 0) %}{% set m2 = row.months.get(row.month_order[2]|string, {}).get('subtotal', 0) %}{% set hi = [m0, m1, m2]|max %}{% set lo = [m0, m1, m2]|min %}{% set span = hi - lo if hi != lo else 1 %}{% set p0 = 30 - ((m0 - lo) / span * 24) %}{% set p1 = 30 - ((m1 - lo) / span * 24) %}{% set p2 = 30 - ((m2 - lo) / span * 24) %}<svg class="sku-sparkline" width="112" height="36" viewBox="0 0 112 36" role="img" aria-label="Trend 3 bulan {{ row.sku }}"><title>{{ row.sku }}: {{ m0 }} · {{ m1 }} · {{ m2 }}</title><line x1="0" y1="33" x2="112" y2="33" stroke="#DCE4DD" stroke-width="1"/><polyline fill="none" stroke="#286645" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="8,{{ p0 }} 56,{{ p1 }} 104,{{ p2 }}"/><circle cx="8" cy="{{ p0 }}" r="2.6" fill="#286645"/><circle cx="56" cy="{{ p1 }}" r="2.6" fill="#286645"/><circle cx="104" cy="{{ p2 }}" r="2.6" fill="#286645"/></svg></td>
           <td data-column="supplier">
             <span
               class="supplier-pill {% if not row.supplier and row.kind == 'IMPOR' %}supplier-import{% endif %}"
@@ -435,11 +431,8 @@
             Rp {{ '{:,.0f}'.format(row.total_sales).replace(',', '.') }}
           </td>
           <td data-column="target" class="num target-stock">
-            {{ '{:,.0f}'.format(row.target_stock|default(0)) }}
-          </td>
-          <td data-column="restock" class="num restock-qty">
-            {{ '{:,.0f}'.format(row.restock_qty|default(0)) }}
-          </td>
+             {{ '{:,.0f}'.format(row.target_stock|default(0)) }}
+           </td>
           <td
             data-column="reason"
             class="restock-reason"
@@ -451,7 +444,7 @@
           <td data-column="status">
             <span
               class="status-badge status-{{ row.status|lower|replace(' ', '-') }}"
-              >{{ row.status }}</span
+              >{{ {'CRITICAL': 'Kritis', 'NEED ORDER': 'Order', 'SUFFICIENT': 'Aman', 'DISCONTINUE': 'DISCONTINUE'}.get(row.status, row.status) }}</span
             >
           </td>
         </tr>
@@ -491,7 +484,7 @@
             <li>Penjualan: sheet <code>PENJUALAN_PERIODE</code></li>
             <li>Stok dapat dijual dan dipesan: sheet <code>STOK</code></li>
             <li>Jenis barang: sheet <code>IMPOR</code></li>
-            <li>Lead time dan safety stock: <code>Settings</code></li>
+            <li>Lead time dan umur persediaan: <code>Settings</code></li>
           </ul>
         </div>
         <p id="reason-text" class="reason-text"></p>
@@ -500,13 +493,13 @@
           ><code
              >Rata-rata penjualan = (bulan -3 + bulan -2 + bulan -1) / 3</code
           ><code
-             >ADS = rata-rata penjualan / jumlah hari bulan berjalan</code
+             >ADS = (rata-rata 3 bulan histori + proyeksi bulan berjalan) / jumlah hari bulan berjalan</code
           ><code
-            >Target hari aman = lead time + (lead time × safety stock %)</code
-          ><code>Harus stok = ceil(ADS × target hari aman)</code
+             >Umur persediaan = 90 hari (Berryman impor / Klevo), 30 hari (Berryman lokal)</code
+          ><code>Rekomendasi stok = ceil(ADS × umur persediaan)</code
           ><code
-            >Saran restock = max(0, harus stok - stok dapat dijual -
-            dipesan)</code
+            >Kritis bila Coverage + OTW &lt; Lead Time; Order bila Coverage +
+            OTW &lt; Umur Persediaan</code
           >
         </div>
         <div class="reason-grid">
@@ -524,11 +517,7 @@
           <div><span>ADS</span><strong id="reason-ads"></strong></div>
           <div><span>Lead time</span><strong id="reason-lead"></strong></div>
           <div>
-            <span>Safety stock</span><strong id="reason-safety"></strong>
-          </div>
-          <div>
-            <span>Target hari aman</span
-            ><strong id="reason-target-days"></strong>
+            <span>Umur persediaan</span><strong id="reason-age"></strong>
           </div>
           <div>
             <span>Target stok</span><strong id="reason-target"></strong>
@@ -544,7 +533,7 @@
             <span>Stok + OTW</span><strong id="reason-current"></strong>
           </div>
           <div class="reason-highlight">
-            <span>Saran restock</span><strong id="reason-restock"></strong>
+            <span>Rekomendasi stok</span><strong id="reason-restock"></strong>
           </div>
         </div>
       </div>
@@ -608,6 +597,7 @@
     no: "No.",
     sku: "SKU",
     name: "Nama Barang",
+    trend: "Trend",
     supplier: "Supplier",
     cbm: "CBM",
     stock_gudang: "Stok Gudang",
@@ -629,8 +619,7 @@
     otw: "OTW",
     change: "Change",
     omzet: "Omzet",
-    target: "Harus Stok",
-    restock: "Saran Restock",
+    target: "Rekomendasi Stok",
     reason: "Alasan",
     status: "Status",
   };
@@ -639,6 +628,7 @@
     ringkas: [
       "sku",
       "name",
+      "trend",
       "kind",
       "month0",
       "month1",
@@ -652,6 +642,7 @@
       "no",
       "sku",
       "name",
+      "trend",
       "supplier",
       "stock_gudang",
       "ordered",
@@ -738,10 +729,8 @@
         button.dataset.ads + " unit/hari";
       document.getElementById("reason-lead").textContent =
         button.dataset.lead + " hari";
-      document.getElementById("reason-safety").textContent =
-        button.dataset.safety + "%";
-      document.getElementById("reason-target-days").textContent =
-        button.dataset.targetDays + " hari";
+      document.getElementById("reason-age").textContent =
+        button.dataset.age + " hari";
       document.getElementById("reason-target").textContent =
         button.dataset.target + " unit";
       document.getElementById("reason-available").textContent =
@@ -753,5 +742,5 @@
       document.getElementById("reason-restock").textContent =
         button.dataset.restock + " unit";
     });
-</script><script>function updateClock(){const now=new Date();document.getElementById('today-label').textContent=now.toLocaleDateString('id-ID',{weekday:'long'});document.getElementById('today-date').textContent=now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});document.getElementById('digital-clock').textContent=now.toLocaleTimeString('id-ID',{hour12:false})}updateClock();setInterval(updateClock,1000);</script>
+</script><script>function updateClock(){const now=new Date();document.getElementById('today-label').textContent=now.toLocaleDateString('id-ID',{weekday:'long'});document.getElementById('today-date').textContent=now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});document.getElementById('digital-clock').textContent=now.toLocaleTimeString('id-ID',{hour12:false})}updateClock();setInterval(updateClock,1000);</script>{% if request.query_params.get('print') %}<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),700));</script>{% endif %}
 {% endblock %}

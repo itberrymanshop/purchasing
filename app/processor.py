@@ -96,7 +96,7 @@ def keyed_values(ws, value_aliases):
     return result
 
 def process_workbook(path, rules=None):
-    rules = rules or {"lead_time_import": 80, "lead_time_lokal": 15, "safety_stock_percent": 20, "minimum_order_quantity": 1, "order_rounding": 1}
+    rules = rules or {"lead_time_import": 80, "lead_time_lokal": 15, "umur_berryman_import": 90, "umur_klevo_import": 90, "umur_berryman_lokal": 30}
     wb = openpyxl.load_workbook(path, data_only=True)
     stock_ws = sheet(wb, "stok")
     if not stock_ws: raise ValueError("Sheet 'ketersediaan stok penjualan' tidak ditemukan.")
@@ -117,7 +117,19 @@ def process_workbook(path, rules=None):
         category = re.sub(r"\s+", " ", category)
         tax[code] = "PM" if category == "PM" else "NP" if category == "NP" else category
     discontinued = {code: str(value or "AKTIF").upper().strip() or "AKTIF" for code, value in keyed_values(sheet(wb, "discontinue"), ("keterangan barang", "keterangan")).items()}
-    pareto_codes = set(keyed_values(sheet(wb, "pareto"), ("produk", "nama")).keys())
+    pareto_types = {}
+    pareto_sheet = sheet(wb, "pareto")
+    if pareto_sheet:
+        for values, headers in rows(pareto_sheet):
+            marketplace_sku = str(cell_by_alias(values, headers, "marketplace sku") or "").strip()
+            grosir_sku = str(cell_by_alias(values, headers, "grosir sku") or "").strip()
+            mp_gr_sku = str(cell_by_alias(values, headers, "mp gr sku") or "").strip()
+            if marketplace_sku and marketplace_sku not in pareto_types:
+                pareto_types[marketplace_sku] = "MARKETPLACE"
+            if grosir_sku and grosir_sku not in pareto_types:
+                pareto_types[grosir_sku] = "GROSIR"
+            if mp_gr_sku:
+                pareto_types[mp_gr_sku] = "MP_GR"
     result = []
     for position, (values, headers) in enumerate(rows(stock_ws), 1):
         code = code_of(values, headers)
@@ -127,7 +139,8 @@ def process_workbook(path, rules=None):
         current_sales = monthly.get(current, {}).get("subtotal", 0)
         historical_sales = [monthly.get(month, {}).get("subtotal", 0) for month in month_order[:3]]
         average_sales = sum(historical_sales) / 3
-        ads = average_sales / days_in_current
+        projection = current_sales * days_in_current / max(days_elapsed, 1)
+        ads = (average_sales + projection) / days_in_current if days_in_current else 0
         stock_gudang = number(cell_by_alias(values, headers, "stok gudang"))
         ordered = number(cell_by_alias(values, headers, "dipesan"))
         sold = number(cell_by_alias(values, headers, "dijual"))
@@ -139,28 +152,26 @@ def process_workbook(path, rules=None):
         kind = "IMPOR" if code in import_codes else "LOKAL"
         condition = discontinued.get(code, "AKTIF")
         lead_time = float(rules["lead_time_import"] if kind == "IMPOR" else rules["lead_time_lokal"])
-        safety_days = lead_time * float(rules["safety_stock_percent"]) / 100
-        target_days = lead_time + safety_days
-        target_stock = math.ceil(ads * target_days) if ads else 0
-        gap = max(0, target_stock - available - ordered)
-        rounding = int(rules["order_rounding"])
-        recommendation = math.ceil(gap / rounding) * rounding if gap else 0
-        if recommendation and recommendation < int(rules["minimum_order_quantity"]): recommendation = int(rules["minimum_order_quantity"])
-        reason = "Tidak perlu restock; stok dan OTW memenuhi target aman."
+        is_klevo = str(cell_by_alias(values, headers, "nama barang") or "").strip().upper().startswith("KLEVO")
+        brand = "KLEVO" if is_klevo else "BERRYMAN"
+        inventory_age = float(rules["umur_klevo_import"] if is_klevo else rules["umur_berryman_import"] if kind == "IMPOR" else rules["umur_berryman_lokal"])
+        target_stock = math.ceil(ads * inventory_age) if ads else 0
+        recommendation = target_stock
+        reason = "Target stok menjadi rekomendasi stok."
         if not ads: reason = "Tidak ada penjualan historis; evaluasi manual."
-        elif recommendation: reason = f"Coverage {on_way:.1f} hari di bawah target aman {target_days:.0f} hari; target stok {target_stock:,.0f} unit, stok + OTW {available + ordered:,.0f} unit."
-        status = "DISCONTINUE" if condition == "DISCONTINUE" else ("CRITICAL" if on_way is not None and on_way < lead_time else "NEED ORDER" if on_way is not None and on_way < target_days else "SUFFICIENT")
+        elif on_way is not None: reason = f"Coverage {on_way:.1f} hari; umur persediaan {inventory_age:.0f} hari; rekomendasi stok {target_stock:,.0f} unit."
+        status = "DISCONTINUE" if condition == "DISCONTINUE" else ("CRITICAL" if on_way is not None and on_way < lead_time else "NEED ORDER" if on_way is not None and on_way < inventory_age else "SUFFICIENT")
         result.append({
             "no": position, "sku": code, "supplier": str(cell_by_alias(values, headers, "nama pemasok", "pemasok utama") or ""),
             "name": str(cell_by_alias(values, headers, "nama barang") or ""), "cbm": number(cell_by_alias(values, headers, "cbm")),
-            "condition": condition, "kind": kind, "tax": tax.get(code, ""), "import_detail": import_details.get(code, ""), "pareto": code in pareto_codes,
+            "condition": condition, "kind": kind, "tax": tax.get(code, ""), "import_detail": import_details.get(code, ""), "pareto": code in pareto_types, "pareto_type": pareto_types.get(code, ""),
             "stock_gudang": stock_gudang, "ordered": ordered, "sold": sold, "available": available,
             "months": monthly, "month_order": month_order, "current_month": current, "previous_sales": prior_sales,
-            "projection": current_sales * days_in_current / max(days_elapsed, 1), "change": change,
+            "projection": projection, "change": change,
             "trend": "NAIK" if change > 0 else "TURUN" if change < 0 else "STABIL", "price": prices.get(code, 0),
             "total_sales": totals.get(code, 0), "on_hand": on_hand, "on_way": on_way, "status": status,
-            "lead_time": lead_time, "safety_days": safety_days, "target_days": target_days, "ads": ads, "target_stock": target_stock, "restock_qty": recommendation, "restock_reason": reason,
-            "calculation": {"historical_sales": historical_sales, "average_sales": average_sales, "previous_sales": prior_sales, "current_sales": current_sales, "sales_days": days_in_current, "available": available, "ordered": ordered, "safety_percent": float(rules["safety_stock_percent"]), "minimum_order_quantity": int(rules["minimum_order_quantity"]), "order_rounding": int(rules["order_rounding"])},
+            "lead_time": lead_time, "brand": brand, "inventory_age": inventory_age, "ads": ads, "target_stock": target_stock, "restock_qty": recommendation, "restock_reason": reason,
+            "calculation": {"historical_sales": historical_sales, "average_sales": average_sales, "projection": projection, "previous_sales": prior_sales, "current_sales": current_sales, "sales_days": days_in_current, "available": available, "ordered": ordered, "inventory_age": inventory_age},
         })
     return result
 

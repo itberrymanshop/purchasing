@@ -4,9 +4,11 @@ import json
 DEFAULT_RULES = {
     "lead_time_import": 80,
     "lead_time_lokal": 15,
-    "safety_stock_percent": 20,
-    "minimum_order_quantity": 1,
-    "order_rounding": 1,
+    "umur_berryman_import": 90,
+    "umur_klevo_import": 90,
+    "umur_berryman_lokal": 30,
+    "ads_decimal_places": 2,
+    "coverage_decimal_places": 1,
 }
 
 def load_rules(upload_dir: Path) -> dict:
@@ -23,9 +25,11 @@ def save_rules(upload_dir: Path, rules: dict) -> dict:
     normalized = {
         "lead_time_import": max(1, int(rules["lead_time_import"])),
         "lead_time_lokal": max(1, int(rules["lead_time_lokal"])),
-        "safety_stock_percent": max(0, float(rules["safety_stock_percent"])),
-        "minimum_order_quantity": max(1, int(rules["minimum_order_quantity"])),
-        "order_rounding": max(1, int(rules["order_rounding"])),
+        "umur_berryman_import": max(1, int(rules["umur_berryman_import"])),
+        "umur_klevo_import": max(1, int(rules["umur_klevo_import"])),
+        "umur_berryman_lokal": max(1, int(rules["umur_berryman_lokal"])),
+        "ads_decimal_places": min(6, max(0, int(rules["ads_decimal_places"]))),
+        "coverage_decimal_places": min(6, max(0, int(rules["coverage_decimal_places"]))),
     }
     (upload_dir / "purchasing_rules.json").write_text(json.dumps(normalized))
     return normalized
