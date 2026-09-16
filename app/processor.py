@@ -138,16 +138,17 @@ def process_workbook(path, rules=None):
         prior_sales = monthly.get(previous, {}).get("subtotal", 0)
         current_sales = monthly.get(current, {}).get("subtotal", 0)
         historical_sales = [monthly.get(month, {}).get("subtotal", 0) for month in month_order[:3]]
-        average_sales = sum(historical_sales) / 3
         projection = current_sales * days_in_current / max(days_elapsed, 1)
-        ads = (average_sales + projection) / days_in_current if days_in_current else 0
+        average_sales = (sum(historical_sales) + projection) / 4
+        ads = average_sales / days_in_current if days_in_current else 0
         stock_gudang = number(cell_by_alias(values, headers, "stok gudang"))
         ordered = number(cell_by_alias(values, headers, "dipesan"))
         sold = number(cell_by_alias(values, headers, "dijual"))
         available_raw = cell_by_alias(values, headers, "stok dapat dijual")
         available = number(available_raw) if available_raw not in (None, "") else max(0, stock_gudang - sold)
-        on_hand = available / ads if ads else None
-        on_way = (available + ordered) / ads if ads else None
+        previous_daily_sales = prior_sales / days_in_current if days_in_current else 0
+        on_hand = available / previous_daily_sales if previous_daily_sales else None
+        on_way = (available + ordered) / previous_daily_sales if previous_daily_sales else None
         change = prior_sales - monthly.get(two_previous, {}).get("subtotal", 0)
         kind = "IMPOR" if code in import_codes else "LOKAL"
         condition = discontinued.get(code, "AKTIF")
@@ -155,12 +156,12 @@ def process_workbook(path, rules=None):
         is_klevo = str(cell_by_alias(values, headers, "nama barang") or "").strip().upper().startswith("KLEVO")
         brand = "KLEVO" if is_klevo else "BERRYMAN"
         inventory_age = float(rules["umur_klevo_import"] if is_klevo else rules["umur_berryman_import"] if kind == "IMPOR" else rules["umur_berryman_lokal"])
-        target_stock = math.ceil(ads * inventory_age) if ads else 0
+        target_stock = ads * inventory_age if ads else 0
         recommendation = target_stock
         reason = "Target stok menjadi rekomendasi stok."
         if not ads: reason = "Tidak ada penjualan historis; evaluasi manual."
-        elif on_way is not None: reason = f"Coverage {on_way:.1f} hari; umur persediaan {inventory_age:.0f} hari; rekomendasi stok {target_stock:,.0f} unit."
-        status = "DISCONTINUE" if condition == "DISCONTINUE" else ("CRITICAL" if on_way is not None and on_way < lead_time else "NEED ORDER" if on_way is not None and on_way < inventory_age else "SUFFICIENT")
+        elif on_way is not None: reason = f"CSOH + OTW {on_way:.1f} hari; umur persediaan {inventory_age:.0f} hari; rekomendasi stok {target_stock:,.0f} unit."
+        status = "DISCONTINUE" if condition == "DISCONTINUE" else ("N/A" if on_way is None else "CRITICAL" if on_way < lead_time else "NEED ORDER" if on_way < inventory_age else "SUFFICIENT")
         result.append({
             "no": position, "sku": code, "supplier": str(cell_by_alias(values, headers, "nama pemasok", "pemasok utama") or ""),
             "name": str(cell_by_alias(values, headers, "nama barang") or ""), "cbm": number(cell_by_alias(values, headers, "cbm")),
@@ -171,7 +172,7 @@ def process_workbook(path, rules=None):
             "trend": "NAIK" if change > 0 else "TURUN" if change < 0 else "STABIL", "price": prices.get(code, 0),
             "total_sales": totals.get(code, 0), "on_hand": on_hand, "on_way": on_way, "status": status,
             "lead_time": lead_time, "brand": brand, "inventory_age": inventory_age, "ads": ads, "target_stock": target_stock, "restock_qty": recommendation, "restock_reason": reason,
-            "calculation": {"historical_sales": historical_sales, "average_sales": average_sales, "projection": projection, "previous_sales": prior_sales, "current_sales": current_sales, "sales_days": days_in_current, "available": available, "ordered": ordered, "inventory_age": inventory_age},
+            "calculation": {"historical_sales": historical_sales, "average_sales": average_sales, "projection": projection, "previous_sales": prior_sales, "current_sales": current_sales, "sales_days": days_in_current, "sales_days_elapsed": days_elapsed, "previous_daily_sales": previous_daily_sales, "available": available, "ordered": ordered, "inventory_age": inventory_age},
         })
     return result
 

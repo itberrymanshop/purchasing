@@ -146,7 +146,7 @@ def dashboard(request: Request):
     guard = require_user(request, "dashboard.read")
     if guard: return guard
     report = load_active(UPLOADS)
-    if report and report.get("records") and ("calculation" not in report["records"][0] or "inventory_age" not in report["records"][0]):
+    if report and report.get("records") and ("calculation" not in report["records"][0] or "inventory_age" not in report["records"][0] or "previous_daily_sales" not in report["records"][0].get("calculation", {})):
         source = UPLOADS / report.get("filename", "")
         if source.exists():
             refreshed = process_workbook(source, load_rules(UPLOADS))
@@ -165,13 +165,29 @@ def dashboard(request: Request):
     month_order = rows[0]["month_order"] if rows else []
     month_labels = [{"number": month, "label": short_months[month - 1]} for month in month_order]
     projection_label = f"PROYEKSI {month_labels[-1]['label']}" if month_labels else "PROYEKSI"
-    top_gainers = sorted((row for row in rows if row["change"] > 0), key=lambda row: row["change"], reverse=True)[:5]
-    top_losers = sorted((row for row in rows if row["change"] < 0), key=lambda row: row["change"])[:5]
+    for row in rows:
+        elapsed_days = max(row.get("calculation", {}).get("sales_days_elapsed", 1), 1)
+        daily_sales = row.get("calculation", {}).get("current_sales", 0) / elapsed_days
+        row["daily_sales"] = daily_sales
+        row["abnormal_pct"] = (daily_sales - row["ads"]) / row["ads"] * 100 if row["ads"] else None
+    top_gainers = sorted((row for row in rows if row["abnormal_pct"] is not None and row["abnormal_pct"] > 0), key=lambda row: row["abnormal_pct"], reverse=True)[:5]
+    top_losers = sorted((row for row in rows if row["abnormal_pct"] is not None and row["abnormal_pct"] < 0), key=lambda row: row["abnormal_pct"])[:5]
+    top_ads_zero = [row for row in rows if row["abnormal_pct"] is None][:5]
     top_revenue_desc = sorted(rows, key=lambda row: row["total_sales"], reverse=True)[:5]
     top_revenue_asc = sorted(rows, key=lambda row: row["total_sales"])[:5]
-    trend_totals = [{"label": item["label"], "value": sum(row["months"].get(str(item["number"]), {}).get("subtotal", 0) for row in rows)} for item in month_labels]
-    branch_trend = {branch: [{"label": item["label"], "value": sum(row["months"].get(str(item["number"]), {}).get(branch, 0) for row in rows)} for item in month_labels[:-1]] for branch in ("grosir", "marketplace", "klevo")}
-    return TEMPLATES.TemplateResponse("dashboard.html", {"request": request, "rows": rows, "summary": summary, "report": report, "month_labels": month_labels, "projection_label": projection_label, "top_gainers": top_gainers, "top_losers": top_losers, "top_revenue_desc": top_revenue_desc, "top_revenue_asc": top_revenue_asc, "trend_totals": trend_totals, "branch_trend": branch_trend, "display_rules": display_rules})
+    trend_totals = []
+    for item in month_labels:
+        value = sum(row["months"].get(str(item["number"]), {}).get("subtotal", 0) * row.get("price", 0) for row in rows)
+        previous_value = trend_totals[-1]["value"] if trend_totals else 0
+        trend_totals.append({"label": item["label"], "value": value, "pct_change": (value - previous_value) / previous_value * 100 if previous_value else None})
+    branch_trend = {}
+    for branch in ("grosir", "marketplace", "klevo"):
+        branch_trend[branch] = []
+        for index, item in enumerate(month_labels[:-1]):
+            value = sum(row["months"].get(str(item["number"]), {}).get(branch, 0) * row.get("price", 0) for row in rows)
+            month_total = trend_totals[index]["value"] if index < len(trend_totals) else 0
+            branch_trend[branch].append({"label": item["label"], "value": value, "pct": value / month_total * 100 if month_total else 0})
+    return TEMPLATES.TemplateResponse("dashboard.html", {"request": request, "rows": rows, "summary": summary, "report": report, "month_labels": month_labels, "projection_label": projection_label, "top_gainers": top_gainers, "top_losers": top_losers, "top_ads_zero": top_ads_zero, "top_revenue_desc": top_revenue_desc, "top_revenue_asc": top_revenue_asc, "trend_totals": trend_totals, "branch_trend": branch_trend, "display_rules": display_rules})
 
 
 @app.get("/restock", response_class=HTMLResponse)
@@ -452,18 +468,18 @@ def export_excel(request: Request):
     coverage_month = short_months[rows[0]["month_order"][-1] - 1] if rows else "-"
     coverage_days = rows[0]["calculation"]["sales_days"] if rows else 0
     coverage_month_headers = [f"{short_months[month - 1]}" for month in rows[0]["month_order"][:3]] if rows else ["Bulan -3", "Bulan -2", "Bulan -1"]
-    coverage_headers = ["SKU", "Nama Barang", *coverage_month_headers, "Proyeksi Bulan Berjalan", "Rata-rata 3 Bulan", "ADS", "Coverage On Hand", "Coverage + OTW", "Status"]
+    coverage_headers = ["SKU", "Nama Barang", *coverage_month_headers, "Proyeksi Bulan Berjalan", "Rata-rata 4 Nilai", "ADS", "CSOH", "CSOH + OTW", "Status"]
     format_export_sheet(coverage, "ANALISIS COVERAGE", f"Bulan berjalan {coverage_month} ({coverage_days} hari) · ADS memakai rata-rata 3 bulan histori ditambah proyeksi bulan berjalan · {source}", coverage_headers, status_column="Status")
     for i,row in enumerate(rows,4):
-        months=row["month_order"][:3]; coverage.append([row["sku"],row["name"],*[row["months"].get(str(m),{}).get("subtotal",0) for m in months],row["projection"],f"=AVERAGE(C{i}:E{i})",f"=(G{i}+F{i})/{coverage_days}",f'=IF(H{i}=0,"",{row["available"]}/H{i})',f'=IF(H{i}=0,"",{row["available"]+row["ordered"]}/H{i})',STATUS_LABELS.get(row["status"], row["status"])])
+        months=row["month_order"][:3]; coverage.append([row["sku"],row["name"],*[row["months"].get(str(m),{}).get("subtotal",0) for m in months],row["projection"],f"=AVERAGE(C{i}:F{i})",f"=G{i}/{coverage_days}",f'=IF(E{i}=0,"",{row["available"]}/(E{i}/{coverage_days}))',f'=IF(E{i}=0,"",({row["available"]}+{row["ordered"]})/(E{i}/{coverage_days}))',STATUS_LABELS.get(row["status"], row["status"])])
     coverage_status = len(coverage_headers) - 1
     finalize_export_sheet(coverage, status_column=coverage_headers[coverage_status], integer_columns=(2,3,4,5,6), decimal_columns=(7,8,9))
     restock_rows = [row for row in rows if row["status"] in ("CRITICAL", "NEED ORDER")]
     restock = wb.create_sheet("PURCHASING ACTION")
-    restock_headers = ["SKU","Nama Barang","Jenis","Umur Persediaan","Coverage + OTW","Stok + OTW","Rekomendasi Stok","Alasan","Status"]
+    restock_headers = ["SKU","Nama Barang","Jenis","Umur Persediaan","CSOH","CSOH + OTW","Stok Dapat Dijual","Rekomendasi Stok","Alasan","Status"]
     format_export_sheet(restock, "PURCHASING ACTION", f"Rekomendasi stok · {source}", restock_headers, status_column="Status")
     for row in restock_rows:
-        restock.append([row["sku"],row["name"],row["kind"],row["inventory_age"],row["on_way"],row["available"]+row["ordered"],row["target_stock"],row["restock_reason"],STATUS_LABELS.get(row["status"], row["status"])])
+        restock.append([row["sku"],row["name"],row["kind"],row["inventory_age"],row["on_hand"],row["on_way"],row["available"],row["target_stock"],row["restock_reason"],STATUS_LABELS.get(row["status"], row["status"])])
     finalize_export_sheet(restock, status_column=restock_headers[-1], integer_columns=(1,2,3,5,6))
     detail_headers = ["No.","SKU","Nama Barang","Trend Bulan -3","Trend Bulan -2","Trend Bulan -1","Supplier","CBM","Stok Gudang","Dipesan","Dijual","Stok Dapat Dijual","Ket. Barang","Jenis","PM / NP","Keterangan Impor"]
     for month in rows[0]["month_order"] if rows else []: detail_headers += [f"{month} Grosir",f"{month} Marketplace",f"{month} Klevo",f"{month} Subtotal"]
@@ -479,7 +495,7 @@ def export_excel(request: Request):
         values += [row["available"],row["previous_sales"],row["projection"],round(row["on_hand"],rules["coverage_decimal_places"]) if row["on_hand"] is not None else None,round(row["on_way"],rules["coverage_decimal_places"]) if row["on_way"] is not None else None,row["change"],row["total_sales"],row["target_stock"],row["restock_reason"],STATUS_LABELS.get(row["status"], row["status"])]
         detail.append(values)
     finalize_export_sheet(detail, status_column=detail_headers[-1])
-    for ws, notes in [(coverage,[("RUMUS", "Rata-rata 3 Bulan = AVERAGE(Bulan -3:Bulan -1); ADS = (Rata-rata 3 Bulan + Proyeksi Bulan Berjalan) / Hari Bulan Berjalan; Coverage On Hand = Available / ADS; Coverage + OTW = (Available + Dipesan) / ADS")]),(restock,[("RUMUS", "Rekomendasi Stok = ceil(ADS × Umur Persediaan). Umur persediaan: 90 hari untuk Berryman impor dan Klevo impor, 30 hari untuk Berryman lokal.")]),(detail,[("KETERANGAN", "Kolom detail mengikuti tabel Detail stok dan penjualan di Dashboard. Nilai coverage dan OTW dibulatkan hanya untuk tampilan/export.")])]:
+    for ws, notes in [(coverage,[("RUMUS", "Rata-rata 4 Nilai = AVERAGE(Bulan -3:Bulan -1, Proyeksi Bulan Berjalan); ADS = Rata-rata 4 Nilai / Hari Bulan Berjalan; CSOH = Available / (Subtotal Bulan -1 / Hari Bulan Berjalan); CSOH + OTW = (Available + Dipesan) / (Subtotal Bulan -1 / Hari Bulan Berjalan)")]),(restock,[("RUMUS", "Rekomendasi Stok = ceil(ADS × Umur Persediaan). Umur persediaan: 90 hari untuk Berryman impor dan Klevo impor, 30 hari untuk Berryman lokal.")]),(detail,[("KETERANGAN", "Kolom detail mengikuti tabel Detail stok dan penjualan di Dashboard. Nilai coverage dan OTW dibulatkan hanya untuk tampilan/export.")])]:
         note_row = ws.max_row + 2
         ws.merge_cells(start_row=note_row, start_column=1, end_row=note_row, end_column=ws.max_column)
         ws.cell(row=note_row, column=1, value=f"{notes[0][0]}: {notes[0][1]}").font = NOTE_FONT
