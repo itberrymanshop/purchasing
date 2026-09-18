@@ -165,16 +165,34 @@ def dashboard(request: Request):
     month_order = rows[0]["month_order"] if rows else []
     month_labels = [{"number": month, "label": short_months[month - 1]} for month in month_order]
     projection_label = f"PROYEKSI {month_labels[-1]['label']}" if month_labels else "PROYEKSI"
+    
+    audit_reports = load_audit(UPLOADS)
+    last_report_records = audit_reports[0]["records"] if audit_reports else []
+    last_sales = {row["sku"]: row.get("calculation", {}).get("current_sales", 0) for row in last_report_records}
+
     for row in rows:
         elapsed_days = max(row.get("calculation", {}).get("sales_days_elapsed", 1), 1)
         daily_sales = row.get("calculation", {}).get("current_sales", 0) / elapsed_days
         row["daily_sales"] = daily_sales
         row["abnormal_pct"] = (daily_sales - row["ads"]) / row["ads"] * 100 if row["ads"] else None
-    top_gainers = sorted((row for row in rows if row["abnormal_pct"] is not None and row["abnormal_pct"] > 0), key=lambda row: row["abnormal_pct"], reverse=True)[:5]
-    top_losers = sorted((row for row in rows if row["abnormal_pct"] is not None and row["abnormal_pct"] < 0), key=lambda row: row["abnormal_pct"])[:5]
+        
+        sku = row["sku"]
+        today_sales = row.get("calculation", {}).get("current_sales", 0)
+        yesterday_sales = last_sales.get(sku)
+        if yesterday_sales is not None:
+            diff = today_sales - yesterday_sales
+            pct = (diff / yesterday_sales * 100) if yesterday_sales else (100 if diff > 0 else 0)
+            row["sales_diff"] = diff
+            row["sales_diff_pct"] = pct
+        else:
+            row["sales_diff"] = None
+            row["sales_diff_pct"] = None
+
+    top_growth = sorted((row for row in rows if row.get("sales_diff") is not None and row["sales_diff"] > 0), key=lambda row: row["sales_diff"], reverse=True)[:10]
+    top_decline = sorted((row for row in rows if row.get("sales_diff") is not None and row["sales_diff"] < 0), key=lambda row: row["sales_diff"])[:10]
     top_ads_zero = [row for row in rows if row["abnormal_pct"] is None][:5]
-    top_revenue_desc = sorted(rows, key=lambda row: row["total_sales"], reverse=True)[:5]
-    top_revenue_asc = sorted(rows, key=lambda row: row["total_sales"])[:5]
+    top_revenue_desc = sorted(rows, key=lambda row: row["total_sales"], reverse=True)[:10]
+    top_revenue_asc = sorted(rows, key=lambda row: row["total_sales"])[:10]
     trend_totals = []
     for item in month_labels:
         value = sum(row["months"].get(str(item["number"]), {}).get("subtotal", 0) * row.get("price", 0) for row in rows)
@@ -187,7 +205,27 @@ def dashboard(request: Request):
             value = sum(row["months"].get(str(item["number"]), {}).get(branch, 0) * row.get("price", 0) for row in rows)
             month_total = trend_totals[index]["value"] if index < len(trend_totals) else 0
             branch_trend[branch].append({"label": item["label"], "value": value, "pct": value / month_total * 100 if month_total else 0})
-    return TEMPLATES.TemplateResponse("dashboard.html", {"request": request, "rows": rows, "summary": summary, "report": report, "month_labels": month_labels, "projection_label": projection_label, "top_gainers": top_gainers, "top_losers": top_losers, "top_ads_zero": top_ads_zero, "top_revenue_desc": top_revenue_desc, "top_revenue_asc": top_revenue_asc, "trend_totals": trend_totals, "branch_trend": branch_trend, "display_rules": display_rules})
+    pantau_path = UPLOADS / "pantau_dismissed.json"
+    dismissed = set(json.loads(pantau_path.read_text())) if pantau_path.exists() else set()
+    abnormal_multiplier = display_rules.get("abnormal_multiplier", 3.0)
+    watchlist = []
+    for row in rows:
+        if row["ads"] and row["daily_sales"] > (abnormal_multiplier * row["ads"]) and row["sku"] not in dismissed:
+            watchlist.append(row)
+    watchlist.sort(key=lambda r: r["abnormal_pct"] or 0, reverse=True)
+    return TEMPLATES.TemplateResponse("dashboard.html", {"request": request, "rows": rows, "summary": summary, "report": report, "month_labels": month_labels, "projection_label": projection_label, "top_growth": top_growth, "top_decline": top_decline, "top_ads_zero": top_ads_zero, "top_revenue_desc": top_revenue_desc, "top_revenue_asc": top_revenue_asc, "trend_totals": trend_totals, "branch_trend": branch_trend, "display_rules": display_rules, "watchlist": watchlist, "abnormal_multiplier": abnormal_multiplier})
+
+
+@app.post("/pantau/{sku}/selesai")
+def dismiss_pantau(request: Request, sku: str):
+    guard = require_user(request, "dashboard.read")
+    if guard: return guard
+    pantau_path = UPLOADS / "pantau_dismissed.json"
+    dismissed = json.loads(pantau_path.read_text()) if pantau_path.exists() else []
+    if sku not in dismissed:
+        dismissed.append(sku)
+        pantau_path.write_text(json.dumps(dismissed))
+    return JSONResponse({"status": "ok"})
 
 
 @app.get("/restock", response_class=HTMLResponse)
@@ -217,7 +255,7 @@ def sku_trend(request: Request, sku: str):
 
 
 @app.post("/settings")
-def save_settings(request: Request, lead_time_import: int = Form(...), lead_time_lokal: int = Form(...), umur_berryman_import: int = Form(...), umur_klevo_import: int = Form(...), umur_berryman_lokal: int = Form(...), ads_decimal_places: int = Form(...), coverage_decimal_places: int = Form(...)):
+def save_settings(request: Request, lead_time_import: int = Form(...), lead_time_lokal: int = Form(...), umur_berryman_import: int = Form(...), umur_klevo_import: int = Form(...), umur_berryman_lokal: int = Form(...), ads_decimal_places: int = Form(...), coverage_decimal_places: int = Form(...), abnormal_multiplier: float = Form(...), winning_safety_stock_pct: int = Form(...)):
     guard = require_user(request, "settings.write")
     if guard: return guard
     rules = save_rules(UPLOADS, locals())
@@ -454,54 +492,203 @@ def finalize_export_sheet(ws, status_column=None, money_columns=(), integer_colu
     ws.page_setup.fitToHeight = 0
 
 
+
+def generate_excel_bytes(report, rows, rules):
+    generated_at = datetime.now().strftime("%d %b %Y %H:%M")
+    source = f"Sumber: {report.get('filename', 'Unknown')} · Diproses: {report.get('processed_at', 'Unknown')} · Diunduh: {generated_at}"
+    wb = openpyxl.Workbook(); wb.remove(wb.active)
+    
+    ws = wb.create_sheet("Ketersediaan Stok Penjualan")
+    ws.sheet_view.showGridLines = False
+    
+    summary = {"omzet": 0, "impor": 0, "lokal": 0, "pm": 0, "np": 0}
+    for r in rows:
+        summary["omzet"] += r.get("total_sales", 0)
+        if r.get("kind") == "IMPOR": summary["impor"] += r.get("total_sales", 0)
+        if r.get("kind") == "LOKAL": summary["lokal"] += r.get("total_sales", 0)
+        if r.get("tax") == "PM": summary["pm"] += r.get("total_sales", 0)
+        if r.get("tax") == "NP": summary["np"] += r.get("total_sales", 0)
+    
+    omzet = summary["omzet"] or 1
+    
+    # Row 2
+    ws.cell(row=2, column=1, value="ANALISA STOK PEMBELIAN").font = Font(name="Calibri", size=11, bold=True)
+    ws.cell(row=2, column=8, value="PM").font = BODY_FONT
+    ws.cell(row=2, column=9, value=summary["pm"] / omzet).number_format = '0.00%'
+    ws.cell(row=2, column=11, value="Kontribusi IMPOR").font = BODY_FONT
+    ws.cell(row=2, column=13, value=summary["impor"] / omzet).number_format = '0.00%'
+    
+    # Row 3
+    date_str = datetime.now().strftime("%A, %d %B %Y").replace("Monday", "Senin").replace("Tuesday", "Selasa").replace("Wednesday", "Rabu").replace("Thursday", "Kamis").replace("Friday", "Jumat").replace("Saturday", "Sabtu").replace("Sunday", "Minggu").replace("January", "Januari").replace("February", "Februari").replace("March", "Maret").replace("May", "Mei").replace("June", "Juni").replace("July", "Juli").replace("August", "Agustus").replace("October", "Oktober").replace("December", "Desember")
+    ws.cell(row=3, column=1, value=date_str).font = SUBTITLE_FONT
+    ws.cell(row=3, column=8, value="NP").font = BODY_FONT
+    ws.cell(row=3, column=9, value=summary["np"] / omzet).number_format = '0.00%'
+    ws.cell(row=3, column=11, value="Kontribusi LOKAL").font = BODY_FONT
+    ws.cell(row=3, column=13, value=summary["lokal"] / omzet).number_format = '0.00%'
+    
+    short_months = ["JAN","FEB","MAR","APR","MEI","JUN","JUL","AGT","SEP","OKT","NOV","DES"]
+    month_order = rows[0].get("month_order", []) if rows else []
+    
+    headers = ["No.", "Pemasok Utama", "Kode Barang", "Nama Barang", "CBM (cm3)", "Ket. Barang", "JENIS", "PM / NP", "IMPOR", " Stok Gudang ", " Dipesan ", " Dijual ", " Stok dapat dijual "]
+    for month_num in month_order:
+        m_label = short_months[month_num - 1]
+        headers.extend([f"(GR)\n{m_label}", f"(MP)\n{m_label}", f"(KL)\n{m_label}", m_label])
+    
+    cur_m_label = short_months[month_order[-1] - 1] if month_order else "CURRENT"
+    prev1_m_label = short_months[month_order[-2] - 1] if len(month_order) >= 2 else "PREV1"
+    prev2_m_label = short_months[month_order[-3] - 1] if len(month_order) >= 3 else "PREV2"
+    
+    headers.extend([f"PROYEKSI {cur_m_label}", f"CHANGE ({prev1_m_label}-{prev2_m_label})", "TREND", "Harga\nGrosir Min", "Total Penjualan", "COVERAGE STOCK\n(ON HAND)", "COVERAGE STOCK\n(ON HAND + OTW)", "Status Order"])
+    
+    # Force empty Row 4 and Header in Row 5
+    ws.append([]) # Row 4 empty
+    ws.append(headers) # Row 5
+    
+    for col_idx, cell in enumerate(ws[5], 1):
+        cell.font = HEADER_FONT
+        cell.fill = PatternFill("solid", fgColor="286645")
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = THIN_BORDER
+    ws.row_dimensions[5].height = 35
+    ws.freeze_panes = "A6"
+    ws.auto_filter.ref = f"A5:{openpyxl.utils.get_column_letter(len(headers))}5"
+    
+    coverage_format = '#,##0' + ('.' + '0'*rules["coverage_decimal_places"] if rules["coverage_decimal_places"] > 0 else '')
+    
+    for i, row in enumerate(rows, 1):
+        values = [
+            row.get("no", i),
+            row.get("supplier", ""),
+            row.get("sku", ""),
+            row.get("name", ""),
+            row.get("cbm", ""),
+            row.get("condition", ""),
+            row.get("kind", ""),
+            row.get("tax", ""),
+            row.get("import_detail", ""),
+            row.get("stock_gudang", 0),
+            row.get("ordered", 0),
+            row.get("sold", 0),
+            row.get("available", 0)
+        ]
+        
+        for month_num in month_order:
+            data = row.get("months", {}).get(str(month_num), {})
+            values.extend([data.get("grosir", 0), data.get("marketplace", 0), data.get("klevo", 0), data.get("subtotal", 0)])
+            
+        csoh = round(row.get("on_hand", 0) or 0, rules["coverage_decimal_places"]) if row.get("on_hand") is not None else None
+        csoh_otw = round(row.get("on_way", 0) or 0, rules["coverage_decimal_places"]) if row.get("on_way") is not None else None
+        status_label = STATUS_LABELS.get(row.get("status", ""), row.get("status", ""))
+        
+        values.extend([
+            row.get("projection", 0),
+            row.get("change", 0),
+            row.get("trend", ""),
+            row.get("price", 0),
+            row.get("total_sales", 0),
+            csoh,
+            csoh_otw,
+            status_label
+        ])
+        ws.append(values)
+        
+        current_row = ws[ws.max_row]
+        zebra = PatternFill("solid", fgColor="F8FAF8") if ws.max_row % 2 == 1 else PatternFill()
+        
+        for idx, cell in enumerate(current_row):
+            cell.font = BODY_FONT
+            cell.border = THIN_BORDER
+            cell.fill = zebra
+            cell.alignment = Alignment(vertical="center", wrap_text=True)
+            
+            val = cell.value
+            if isinstance(val, (int, float)):
+                if idx in (9, 10, 11, 12): # Stocks
+                    cell.number_format = '#,##0'
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
+                elif idx >= 13 and idx < len(headers)-5: # Monthly
+                    cell.number_format = '#,##0'
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
+                elif idx in (len(headers)-5, len(headers)-4): # Price, Total sales
+                    cell.number_format = '#,##0'
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
+                elif idx in (len(headers)-3, len(headers)-2): # Coverage
+                    cell.number_format = coverage_format
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
+            
+            if idx == len(headers) - 1:
+                highlight = STATUS_FILLS.get(str(val).upper())
+                if highlight:
+                    for c in current_row:
+                        c.fill = highlight
+                        
+    # Append Total Omzet Summary at the bottom
+    ws.append([]) # Empty row space
+    ws.append([]) # Empty row space
+    bottom_row = ws.max_row + 1
+    
+    # Text in column AG (len(headers) - 4), Values in AH (len(headers) - 3)
+    # Total Penjualan column is headers.index("Total Penjualan") + 1
+    total_val_col = headers.index("Total Penjualan") + 1
+    text_col = total_val_col - 1
+    
+    BOLD_BODY_FONT = Font(name="Calibri", size=9, bold=True)
+    
+    ws.cell(row=bottom_row, column=text_col, value="TOTAL OMSET").font = BOLD_BODY_FONT
+    ws.cell(row=bottom_row, column=total_val_col, value=summary["omzet"]).number_format = '#,##0'
+    ws.cell(row=bottom_row, column=total_val_col).font = BOLD_BODY_FONT
+    
+    ws.cell(row=bottom_row+1, column=text_col, value="TOTAL OMSET BARANG IMPOR").font = BOLD_BODY_FONT
+    ws.cell(row=bottom_row+1, column=total_val_col, value=summary["impor"]).number_format = '#,##0'
+    ws.cell(row=bottom_row+1, column=total_val_col).font = BOLD_BODY_FONT
+    
+    ws.cell(row=bottom_row+2, column=text_col, value="TOTAL OMSET BARANG LOKAL").font = BOLD_BODY_FONT
+    ws.cell(row=bottom_row+2, column=total_val_col, value=summary["lokal"]).number_format = '#,##0'
+    ws.cell(row=bottom_row+2, column=total_val_col).font = BOLD_BODY_FONT
+    
+    ws.cell(row=bottom_row+4, column=text_col, value="PM").font = BOLD_BODY_FONT
+    ws.cell(row=bottom_row+4, column=total_val_col, value=summary["pm"]).number_format = '#,##0'
+    ws.cell(row=bottom_row+4, column=total_val_col).font = BOLD_BODY_FONT
+    
+    ws.cell(row=bottom_row+5, column=text_col, value="NP").font = BOLD_BODY_FONT
+    ws.cell(row=bottom_row+5, column=total_val_col, value=summary["np"]).number_format = '#,##0'
+    ws.cell(row=bottom_row+5, column=total_val_col).font = BOLD_BODY_FONT
+                        
+    for col_idx in range(1, len(headers) + 1):
+        letter = openpyxl.utils.get_column_letter(col_idx)
+        if col_idx in (1, 5, 7, 8, 9): ws.column_dimensions[letter].width = 12
+        elif col_idx in (3,): ws.column_dimensions[letter].width = 15
+        elif col_idx in (2, 4, 6): ws.column_dimensions[letter].width = 30
+        elif col_idx >= 10 and col_idx <= len(headers)-2: ws.column_dimensions[letter].width = 11
+        elif col_idx in (len(headers)-2, len(headers)-1): ws.column_dimensions[letter].width = 16
+        else: ws.column_dimensions[letter].width = 14
+
+    output=BytesIO(); wb.save(output); output.seek(0)
+    return output
+
 @app.get("/export/excel")
 def export_excel(request: Request):
     guard = require_user(request, "report.export")
     if guard: return guard
     report, rows, rules = export_rows()
     if not report: return RedirectResponse(url="/dashboard", status_code=303)
-    generated_at = datetime.now().strftime("%d %b %Y %H:%M")
-    source = f"Sumber: {report['filename']} · Diproses: {report['processed_at']} · Diunduh: {generated_at}"
-    wb = openpyxl.Workbook(); wb.remove(wb.active)
-    coverage = wb.create_sheet("ANALISIS COVERAGE")
-    short_months = ["JAN","FEB","MAR","APR","MEI","JUN","JUL","AGT","SEP","OKT","NOV","DES"]
-    coverage_month = short_months[rows[0]["month_order"][-1] - 1] if rows else "-"
-    coverage_days = rows[0]["calculation"]["sales_days"] if rows else 0
-    coverage_month_headers = [f"{short_months[month - 1]}" for month in rows[0]["month_order"][:3]] if rows else ["Bulan -3", "Bulan -2", "Bulan -1"]
-    coverage_headers = ["SKU", "Nama Barang", *coverage_month_headers, "Proyeksi Bulan Berjalan", "Rata-rata 4 Nilai", "ADS", "CSOH", "CSOH + OTW", "Status"]
-    format_export_sheet(coverage, "ANALISIS COVERAGE", f"Bulan berjalan {coverage_month} ({coverage_days} hari) · ADS memakai rata-rata 3 bulan histori ditambah proyeksi bulan berjalan · {source}", coverage_headers, status_column="Status")
-    for i,row in enumerate(rows,4):
-        months=row["month_order"][:3]; coverage.append([row["sku"],row["name"],*[row["months"].get(str(m),{}).get("subtotal",0) for m in months],row["projection"],f"=AVERAGE(C{i}:F{i})",f"=G{i}/{coverage_days}",f'=IF(E{i}=0,"",{row["available"]}/(E{i}/{coverage_days}))',f'=IF(E{i}=0,"",({row["available"]}+{row["ordered"]})/(E{i}/{coverage_days}))',STATUS_LABELS.get(row["status"], row["status"])])
-    coverage_status = len(coverage_headers) - 1
-    finalize_export_sheet(coverage, status_column=coverage_headers[coverage_status], integer_columns=(2,3,4,5,6), decimal_columns=(7,8,9))
-    restock_rows = [row for row in rows if row["status"] in ("CRITICAL", "NEED ORDER")]
-    restock = wb.create_sheet("PURCHASING ACTION")
-    restock_headers = ["SKU","Nama Barang","Jenis","Umur Persediaan","CSOH","CSOH + OTW","Stok Dapat Dijual","Rekomendasi Stok","Alasan","Status"]
-    format_export_sheet(restock, "PURCHASING ACTION", f"Rekomendasi stok · {source}", restock_headers, status_column="Status")
-    for row in restock_rows:
-        restock.append([row["sku"],row["name"],row["kind"],row["inventory_age"],row["on_hand"],row["on_way"],row["available"],row["target_stock"],row["restock_reason"],STATUS_LABELS.get(row["status"], row["status"])])
-    finalize_export_sheet(restock, status_column=restock_headers[-1], integer_columns=(1,2,3,5,6))
-    detail_headers = ["No.","SKU","Nama Barang","Trend Bulan -3","Trend Bulan -2","Trend Bulan -1","Supplier","CBM","Stok Gudang","Dipesan","Dijual","Stok Dapat Dijual","Ket. Barang","Jenis","PM / NP","Keterangan Impor"]
-    for month in rows[0]["month_order"] if rows else []: detail_headers += [f"{month} Grosir",f"{month} Marketplace",f"{month} Klevo",f"{month} Subtotal"]
-    detail_headers += ["Stok","Bulan Lalu","Proyeksi","Coverage","OTW","Change","Omzet","Rekomendasi Stok","Alasan","Status"]
-    detail = wb.create_sheet("DETAIL STOK DAN PENJUALAN")
-    format_export_sheet(detail, "DETAIL STOK DAN PENJUALAN", f"Kolom detail mengikuti tabel Detail stok dan penjualan di Dashboard · {source}", detail_headers, status_column="Status")
-    for row in rows:
-        trend_months = row["month_order"][:3]
-        trend_values = [row["months"].get(str(month), {}).get("subtotal", 0) for month in trend_months]
-        values=[row["no"],row["sku"],row["name"],*trend_values,row["supplier"],row["cbm"],row["stock_gudang"],row["ordered"],row["sold"],row["available"],row["condition"],row["kind"],row["tax"],row["import_detail"]]
-        for month in row["month_order"]:
-            data=row["months"].get(str(month),{}); values += [data.get("grosir",0),data.get("marketplace",0),data.get("klevo",0),data.get("subtotal",0)]
-        values += [row["available"],row["previous_sales"],row["projection"],round(row["on_hand"],rules["coverage_decimal_places"]) if row["on_hand"] is not None else None,round(row["on_way"],rules["coverage_decimal_places"]) if row["on_way"] is not None else None,row["change"],row["total_sales"],row["target_stock"],row["restock_reason"],STATUS_LABELS.get(row["status"], row["status"])]
-        detail.append(values)
-    finalize_export_sheet(detail, status_column=detail_headers[-1])
-    for ws, notes in [(coverage,[("RUMUS", "Rata-rata 4 Nilai = AVERAGE(Bulan -3:Bulan -1, Proyeksi Bulan Berjalan); ADS = Rata-rata 4 Nilai / Hari Bulan Berjalan; CSOH = Available / (Subtotal Bulan -1 / Hari Bulan Berjalan); CSOH + OTW = (Available + Dipesan) / (Subtotal Bulan -1 / Hari Bulan Berjalan)")]),(restock,[("RUMUS", "Rekomendasi Stok = ceil(ADS × Umur Persediaan). Umur persediaan: 90 hari untuk Berryman impor dan Klevo impor, 30 hari untuk Berryman lokal.")]),(detail,[("KETERANGAN", "Kolom detail mengikuti tabel Detail stok dan penjualan di Dashboard. Nilai coverage dan OTW dibulatkan hanya untuk tampilan/export.")])]:
-        note_row = ws.max_row + 2
-        ws.merge_cells(start_row=note_row, start_column=1, end_row=note_row, end_column=ws.max_column)
-        ws.cell(row=note_row, column=1, value=f"{notes[0][0]}: {notes[0][1]}").font = NOTE_FONT
-    output=BytesIO(); wb.save(output); output.seek(0)
+    output = generate_excel_bytes(report, rows, rules)
     return StreamingResponse(output,media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",headers={"Content-Disposition":f'attachment; filename="laporan-purchasing-{datetime.now():%Y%m%d-%H%M}.xlsx"'})
 
+@app.get("/audit/export/{index}")
+def export_audit_excel(request: Request, index: int):
+    guard = require_user(request, "report.export")
+    if guard: return guard
+    audits = load_audit(UPLOADS)
+    if index < 0 or index >= len(audits):
+        return RedirectResponse(url="/audit", status_code=303)
+    report = audits[index]
+    rows = report.get("records", [])
+    if not rows: return RedirectResponse(url="/audit", status_code=303)
+    rules = load_rules(UPLOADS) # apply current rules format style
+    output = generate_excel_bytes(report, rows, rules)
+    file_date = report.get("processed_at", "")[:10].replace("-", "")
+    return StreamingResponse(output,media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",headers={"Content-Disposition":f'attachment; filename="arsip-purchasing-{file_date}.xlsx"'})
 
 @app.get("/export/pdf")
 def export_pdf(request: Request):

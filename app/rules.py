@@ -9,6 +9,8 @@ DEFAULT_RULES = {
     "umur_berryman_lokal": 30,
     "ads_decimal_places": 2,
     "coverage_decimal_places": 1,
+    "abnormal_multiplier": 3.0,
+    "winning_safety_stock_pct": 20,
 }
 
 def load_rules(upload_dir: Path) -> dict:
@@ -30,6 +32,8 @@ def save_rules(upload_dir: Path, rules: dict) -> dict:
         "umur_berryman_lokal": max(1, int(rules["umur_berryman_lokal"])),
         "ads_decimal_places": min(6, max(0, int(rules["ads_decimal_places"]))),
         "coverage_decimal_places": min(6, max(0, int(rules["coverage_decimal_places"]))),
+        "abnormal_multiplier": max(0.1, float(rules.get("abnormal_multiplier", 3.0))),
+        "winning_safety_stock_pct": min(100, max(0, int(rules.get("winning_safety_stock_pct", 20)))),
     }
     (upload_dir / "purchasing_rules.json").write_text(json.dumps(normalized))
     return normalized

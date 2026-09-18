@@ -2,4 +2,55 @@
 {% block title %}Login · Purchasing Control{% endblock %}
 {% block body_class %}login-page{% endblock %}
 {% block styles %}<link href="{{ url_for('static', path='css/login.css') }}" rel="stylesheet" />{% endblock %}
-{% block app_frame %}<main class="login-shell"><section class="login-brand-panel"><div class="login-brand"><i class="bi bi-box-seam"></i><span>Purchasing Control</span></div><div class="login-hero-copy"><div class="eyebrow">PURCHASING ANALYTICS</div><h1>Kontrol purchasing lebih terukur.</h1><p>Pantau stok, penjualan, coverage, dan rekomendasi order dalam satu dashboard.</p></div><small>Daily purchasing report</small></section><section class="login-form-panel"><div class="login-card"><div class="eyebrow">SECURE ACCESS</div><h2>Selamat datang kembali</h2><p>Masuk untuk melanjutkan ke dashboard.</p>{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}<form method="post" action="/login"><label class="form-label" for="username">Username</label><input id="username" class="form-control" name="username" autocomplete="username" autofocus required><label class="form-label" for="password">Password</label><input id="password" class="form-control" type="password" name="password" autocomplete="current-password" required><button class="btn btn-primary w-100" type="submit">Masuk</button></form><div class="login-help">Hubungi administrator jika belum memiliki akun.</div></div></section></main>{% endblock %}
+{% block app_frame %}
+<main class="login-shell">
+  <section class="login-brand-panel">
+    <div class="login-brand">
+      <!-- Placeholder until the real logo is uploaded to the server -->
+      <img src="{{ url_for('static', path='img/logo.webp') }}" alt="Berryman Logo" class="brand-logo-img" style="width: 48px; height: 48px; border-radius: 8px;">
+      <span>Berryman</span>
+    </div>
+    <div class="login-hero-copy">
+      <div class="eyebrow">Enterprise System</div>
+      <h1>Purchasing Control<br>Dashboard</h1>
+      <p>Sistem manajemen inventori, analisis tren penjualan, dan rekomendasi restock otomatis untuk kelancaran supply chain.</p>
+      
+      <div class="trust-indicators">
+        <div class="trust-item">
+          <i class="bi bi-shield-check"></i>
+          <span>Akses terenkripsi dan role-based</span>
+        </div>
+        <div class="trust-item">
+          <i class="bi bi-graph-up-arrow"></i>
+          <span>Analisis Pareto & Growth otomatis</span>
+        </div>
+        <div class="trust-item">
+          <i class="bi bi-file-earmark-excel"></i>
+          <span>Export laporan format standar</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="login-form-panel">
+    <div class="login-card">
+      <div class="eyebrow" style="color: #64748b; font-size: 10px; margin-bottom: 8px;">SECURE ACCESS</div>
+      <h2>Welcome back</h2>
+      <p>Masuk ke akun Anda untuk melanjutkan.</p>
+      {% if error %}
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <span>{{ error }}</span>
+      </div>
+      {% endif %}
+      <form method="post" action="/login">
+        <label class="form-label" for="username">Username</label>
+        <input id="username" class="form-control mb-3" name="username" placeholder="Masukkan username" autocomplete="username" autofocus required>
+        <label class="form-label" for="password">Password</label>
+        <input id="password" class="form-control mb-4" type="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+        <button class="btn btn-primary w-100" type="submit">Log In</button>
+      </form>
+      <div class="login-help">Lupa password atau tidak bisa login? Hubungi Administrator.</div>
+    </div>
+  </section>
+</main>
+{% endblock %}

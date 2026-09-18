@@ -1,0 +1,111 @@
+/* CORPORATE REDESIGN (BM LOGO THEME) */
+
+:root {
+  --brand-blue: #20469b;
+  --brand-blue-hover: #17367a;
+  --brand-red: #d61f31;
+  --bg-slate: #f8fafc;
+  --text-dark: #0f172a;
+  --text-muted: #64748b;
+  
+  /* Override existing variables */
+  --blue: var(--brand-blue);
+  --green: var(--brand-blue);
+  --ink: var(--text-dark);
+  --muted: var(--text-muted);
+  --bg: var(--bg-slate);
+  --sidebar: var(--brand-blue);
+}
+
+/* Sidebar & Buttons Override */
+.desktop-sidebar {
+  background: var(--sidebar);
+}
+.sidebar-link:hover, .sidebar-link.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.btn-primary {
+  background: var(--brand-blue) !important;
+  border-color: var(--brand-blue) !important;
+}
+.btn-primary:hover {
+  background: var(--brand-blue-hover) !important;
+  border-color: var(--brand-blue-hover) !important;
+}
+
+/* Dashboard Hero Topbar */
+.dashboard-hero {
+  background: #ffffff !important;
+  color: var(--text-dark) !important;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.dashboard-hero h1 {
+  color: var(--brand-blue);
+  font-weight: 800;
+}
+.dashboard-hero p {
+  color: var(--text-muted);
+}
+.dashboard-hero .eyebrow {
+  color: var(--brand-red);
+}
+.date-widget, .clock-widget {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: var(--text-dark);
+}
+.date-widget i, .clock-widget i {
+  color: var(--brand-blue);
+}
+.date-widget small, .clock-widget small {
+  color: var(--text-muted);
+}
+.dashboard-hero .btn-light {
+  background: var(--brand-blue);
+  color: #fff;
+}
+.dashboard-hero .btn-light:hover {
+  background: var(--brand-blue-hover);
+  color: #fff;
+}
+
+/* KPI Cards Styling */
+.dashboard-kpis .metric-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+.metric-card .metric-icon {
+  background: #f1f5f9 !important;
+  color: var(--brand-blue) !important;
+}
+.metric-card.metric-danger .metric-icon { background: #fef2f2 !important; color: var(--brand-red) !important; }
+.metric-card.metric-warning .metric-icon { background: #fffbeb !important; color: #d97706 !important; }
+.metric-card.metric-success .metric-icon { background: #f0fdf4 !important; color: #16a34a !important; }
+
+/* Status Badges */
+.status-badge {
+  font-weight: 700;
+}
+.status-critical { background: #fef2f2 !important; color: var(--brand-red) !important; border: 1px solid #fecaca; }
+.status-need-order { background: #fffbeb !important; color: #d97706 !important; border: 1px solid #fde68a; }
+.status-sufficient { background: #f0fdf4 !important; color: #16a34a !important; border: 1px solid #bbf7d0; }
+
+/* Text Overrides */
+.text-danger { color: var(--brand-red) !important; }
+
+/* Table Improvements */
+.table thead th {
+  background: #f1f5f9;
+  color: var(--brand-blue);
+  font-weight: 700;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* Watchlist Alarm */
+.alert-danger {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: var(--brand-red);
+}

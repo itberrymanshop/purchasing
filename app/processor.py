@@ -130,6 +130,18 @@ def process_workbook(path, rules=None):
                 pareto_types[grosir_sku] = "GROSIR"
             if mp_gr_sku:
                 pareto_types[mp_gr_sku] = "MP_GR"
+    
+    # Calculate Dynamic Winning (80% Pareto by Revenue)
+    total_revenue_global = sum(totals.values())
+    sorted_skus = sorted(totals.keys(), key=lambda k: totals[k], reverse=True)
+    running_revenue = 0
+    winning_skus = set()
+    for sku in sorted_skus:
+        running_revenue += totals[sku]
+        winning_skus.add(sku)
+        if total_revenue_global > 0 and (running_revenue / total_revenue_global) >= 0.8:
+            break
+
     result = []
     for position, (values, headers) in enumerate(rows(stock_ws), 1):
         code = code_of(values, headers)
@@ -139,7 +151,7 @@ def process_workbook(path, rules=None):
         current_sales = monthly.get(current, {}).get("subtotal", 0)
         historical_sales = [monthly.get(month, {}).get("subtotal", 0) for month in month_order[:3]]
         projection = current_sales * days_in_current / max(days_elapsed, 1)
-        average_sales = (sum(historical_sales) + projection) / 4
+        average_sales = sum(historical_sales) / 3
         ads = average_sales / days_in_current if days_in_current else 0
         stock_gudang = number(cell_by_alias(values, headers, "stok gudang"))
         ordered = number(cell_by_alias(values, headers, "dipesan"))
@@ -157,15 +169,20 @@ def process_workbook(path, rules=None):
         brand = "KLEVO" if is_klevo else "BERRYMAN"
         inventory_age = float(rules["umur_klevo_import"] if is_klevo else rules["umur_berryman_import"] if kind == "IMPOR" else rules["umur_berryman_lokal"])
         target_stock = ads * inventory_age if ads else 0
-        recommendation = target_stock
-        reason = "Target stok menjadi rekomendasi stok."
+        is_winning = code in winning_skus
+        safety_stock_pct = float(rules.get("winning_safety_stock_pct", 20)) / 100
+        safety_stock = target_stock * safety_stock_pct if is_winning else 0
+        recommendation = max(0, target_stock + safety_stock - available)
+        reason = "Target stok - stok dapat dijual."
+        if is_winning:
+            reason = f"Target stok + safety stock {safety_stock_pct * 100:.0f}% (Winning/Pareto) - stok dapat dijual."
         if not ads: reason = "Tidak ada penjualan historis; evaluasi manual."
-        elif on_way is not None: reason = f"CSOH + OTW {on_way:.1f} hari; umur persediaan {inventory_age:.0f} hari; rekomendasi stok {target_stock:,.0f} unit."
+        elif on_way is not None: reason = f"CSOH + OTW {on_way:.1f} hari; umur persediaan {inventory_age:.0f} hari; target {target_stock:,.0f} unit; safety stock {safety_stock:,.0f} unit; rekomendasi restock {recommendation:,.0f} unit."
         status = "DISCONTINUE" if condition == "DISCONTINUE" else ("N/A" if on_way is None else "CRITICAL" if on_way < lead_time else "NEED ORDER" if on_way < inventory_age else "SUFFICIENT")
         result.append({
             "no": position, "sku": code, "supplier": str(cell_by_alias(values, headers, "nama pemasok", "pemasok utama") or ""),
             "name": str(cell_by_alias(values, headers, "nama barang") or ""), "cbm": number(cell_by_alias(values, headers, "cbm")),
-            "condition": condition, "kind": kind, "tax": tax.get(code, ""), "import_detail": import_details.get(code, ""), "pareto": code in pareto_types, "pareto_type": pareto_types.get(code, ""),
+            "condition": condition, "kind": kind, "tax": tax.get(code, ""), "import_detail": import_details.get(code, ""), "pareto": is_winning, "pareto_type": pareto_types.get(code, ""),
             "stock_gudang": stock_gudang, "ordered": ordered, "sold": sold, "available": available,
             "months": monthly, "month_order": month_order, "current_month": current, "previous_sales": prior_sales,
             "projection": projection, "change": change,

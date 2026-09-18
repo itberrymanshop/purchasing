@@ -34,6 +34,39 @@
   </div>
 </div>
 
+{% if watchlist %}
+<div class="alert alert-danger d-flex align-items-center mb-4" id="watchlist-alarm">
+  <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+  <div>
+    <strong>Perhatian!</strong> Ada <span id="watchlist-count">{{ watchlist|length }}</span> SKU dengan rata-rata penjualan harian melebihi batas abnormal ({{ abnormal_multiplier }}x ADS).
+    <a href="#watchlist-section" class="alert-link ms-2">Lihat Daftar Pantau</a>
+  </div>
+</div>
+
+<section class="card mb-4" id="watchlist-section">
+  <div class="panel-head">
+    <div><span class="eyebrow">ALARM ABNORMAL</span><h2>Daftar Pantau</h2><p class="text-muted mb-0">Penjualan harian melampaui batas wajar ({{ abnormal_multiplier }}x ADS).</p></div>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>SKU</th><th>Nama Barang</th><th>Penjualan Harian</th><th>ADS</th><th>Selisih</th><th></th></tr></thead>
+      <tbody id="watchlist-body">
+        {% for row in watchlist %}
+        <tr data-sku="{{ row.sku }}">
+          <td><code>{{ row.sku }}</code></td>
+          <td>{{ row.name }}</td>
+          <td>{{ '%.2f'|format(row.daily_sales) }}</td>
+          <td>{{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.ads) }}</td>
+          <td><strong class="text-danger">+{{ '%.1f'|format(row.abnormal_pct) }}%</strong></td>
+          <td><button class="btn btn-sm btn-outline-success" type="button" onclick="dismissPantau('{{ row.sku }}')">Selesai</button></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
 <div class="dashboard-kpis status-kpis">
   <div class="col-6 col-xl">
     <div class="card metric-card metric-primary">
@@ -169,8 +202,13 @@
 </section>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
 <script>
+  const appSettings = {
+    coverageDecimals: {{ display_rules.coverage_decimal_places }},
+    adsDecimals: {{ display_rules.ads_decimal_places }}
+  };
   window.addEventListener('load',()=>{const donutLabelsPlugin={id:'donutLabels',afterDraw(chart){const dataset=chart.data.datasets[0];const meta=chart.getDatasetMeta(0);const total=dataset.data.reduce((sum,value)=>sum+value,0);const ctx=chart.ctx;const colors=dataset.backgroundColor;ctx.save();ctx.font='600 10px Manrope, Arial, sans-serif';ctx.textBaseline='middle';meta.data.forEach((arc,index)=>{const angle=(arc.startAngle+arc.endAngle)/2;const startRadius=arc.outerRadius+3;const lineRadius=arc.outerRadius+11;const x1=arc.x+Math.cos(angle)*startRadius;const y1=arc.y+Math.sin(angle)*startRadius;const x2=arc.x+Math.cos(angle)*lineRadius;const y2=arc.y+Math.sin(angle)*lineRadius;const right=Math.cos(angle)>=0;const x3=x2+(right?10:-10);const percent=total?((dataset.data[index]/total)*100).toFixed(1):'0.0';ctx.strokeStyle=colors[index];ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y2);ctx.stroke();ctx.fillStyle='#68756d';ctx.textAlign=right?'left':'right';ctx.fillText(`${chart.data.labels[index]} ${percent}%`,x3+(right?4:-4),y2);});ctx.restore();}};const donutOptions={responsive:true,maintainAspectRatio:false,cutout:'68%',layout:{padding:{left:70,right:70,top:10,bottom:10}},plugins:{legend:{display:false},tooltip:{callbacks:{label:(context)=>{const total=context.dataset.data.reduce((sum,value)=>sum+value,0);const value=context.raw||0;return ` ${context.label}: Rp ${new Intl.NumberFormat('id-ID').format(value)} (${total?((value/total)*100).toFixed(1):0}%)`;}}}}};const importCanvas=document.getElementById('import-local-chart');const taxCanvas=document.getElementById('pm-np-chart');if(window.Chart&&importCanvas)new Chart(importCanvas,{type:'doughnut',plugins:[donutLabelsPlugin],data:{labels:['Impor','Lokal'],datasets:[{data:[{{ summary.impor }},{{ summary.lokal }}],backgroundColor:['#2563eb','#16a34a'],borderWidth:0}]},options:donutOptions});if(window.Chart&&taxCanvas)new Chart(taxCanvas,{type:'doughnut',plugins:[donutLabelsPlugin],data:{labels:['PM','NP'],datasets:[{data:[{{ summary.pm }},{{ summary.np }}],backgroundColor:['#0ea5e9','#f59e0b'],borderWidth:0}]},options:donutOptions});});
 </script>
+
 <section class="insight-grid">
   <article class="card insight-card">
     <div class="insight-title">
@@ -212,76 +250,64 @@
   </article>
   <article class="card insight-card">
     <div class="insight-title">
-      <h2>Top 5 Penjualan Abnormal Naik</h2>
-      <span>Daily · penjualan harian di atas ADS</span>
+      <h2>Top 10 Pertumbuhan Penjualan (Harian)</h2>
+      <span>Peningkatan penjualan harian tertinggi vs laporan terakhir.</span>
     </div>
-    <div class="ranking-list">
-      {% for row in top_gainers %}
-      <div>
-        <code>{{ row.sku }}</code
-        ><span title="{{ row.name }}">{{ row.name }}</span
-        ><strong class="text-success"
-          >+{{ '%.1f'|format(row.abnormal_pct) }}%</strong
-        >
+    <div class="ranking-list" style="max-height: 280px; overflow-y: auto; overflow-x: hidden; padding-right: 4px;">
+      {% for row in top_growth %}
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <code>{{ row.sku }}</code>
+        <span class="text-truncate" style="max-width: 150px;" title="{{ row.name }}">{{ row.name }}</span>
+        <strong class="text-success ms-auto text-end" style="white-space: nowrap;">+{{ row.sales_diff }} unit (+{{ '%.1f'|format(row.sales_diff_pct) }}%)</strong>
       </div>
       {% else %}
-      <p class="text-muted small">Belum ada gainer.</p>
+      <p class="text-muted small">Belum ada data growth.</p>
       {% endfor %}
     </div>
   </article>
   <article class="card insight-card">
     <div class="insight-title">
-      <h2>Top 5 Penjualan Abnormal Turun</h2>
-      <span>Daily · penjualan harian di bawah ADS</span>
+      <h2>Top 10 Penurunan Penjualan (Harian)</h2>
+      <span>Penurunan penjualan harian tertinggi vs laporan terakhir.</span>
     </div>
-    <div class="ranking-list">
-      {% for row in top_losers %}
-      <div>
-        <code>{{ row.sku }}</code
-        ><span title="{{ row.name }}">{{ row.name }}</span
-        ><strong class="text-danger"
-          >{{ '%.1f'|format(row.abnormal_pct) }}%</strong
-        >
+    <div class="ranking-list" style="max-height: 280px; overflow-y: auto; overflow-x: hidden; padding-right: 4px;">
+      {% for row in top_decline %}
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <code>{{ row.sku }}</code>
+        <span class="text-truncate" style="max-width: 150px;" title="{{ row.name }}">{{ row.name }}</span>
+        <strong class="text-danger ms-auto text-end" style="white-space: nowrap;">{{ row.sales_diff }} unit ({{ '%.1f'|format(row.sales_diff_pct) }}%)</strong>
       </div>
       {% else %}
-      <p class="text-muted small">Belum ada loser.</p>
-      {% endfor %} {% if top_ads_zero %}
-      <p class="text-muted small">
-        {{ top_ads_zero|length }} SKU tidak dihitung karena ADS nol.
-      </p>
-      {% endif %}
+      <p class="text-muted small">Belum ada data decline.</p>
+      {% endfor %} 
     </div>
   </article>
   <article class="card insight-card">
     <div class="insight-title">
-      <h2>Top 5 Highest Revenue (Monthly)</h2>
-      <span>Omzet bulanan tertinggi</span>
+      <h2>Top 10 Omzet Tertinggi (Bulanan)</h2>
+      <span>Produk dengan penyumbang omzet terbesar bulan ini.</span>
     </div>
-    <div class="ranking-list">
+    <div class="ranking-list" style="max-height: 280px; overflow-y: auto; overflow-x: hidden; padding-right: 4px;">
       {% for row in top_revenue_desc %}
-      <div>
-        <code>{{ row.sku }}</code
-        ><span title="{{ row.name }}">{{ row.name }}</span
-        ><strong
-          >Rp {{ '{:,.0f}'.format(row.total_sales).replace(',', '.') }}</strong
-        >
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <code>{{ row.sku }}</code>
+        <span class="text-truncate" style="max-width: 160px;" title="{{ row.name }}">{{ row.name }}</span>
+        <strong class="ms-auto text-end" style="white-space: nowrap;">Rp {{ '{:,.0f}'.format(row.total_sales).replace(',', '.') }}</strong>
       </div>
       {% endfor %}
     </div>
   </article>
   <article class="card insight-card">
     <div class="insight-title">
-      <h2>Top 5 Lowest Revenue (Monthly)</h2>
-      <span>Omzet bulanan terendah</span>
+      <h2>Top 10 Omzet Terendah (Bulanan)</h2>
+      <span>Produk dengan penyumbang omzet terkecil bulan ini.</span>
     </div>
-    <div class="ranking-list">
+    <div class="ranking-list" style="max-height: 280px; overflow-y: auto; overflow-x: hidden; padding-right: 4px;">
       {% for row in top_revenue_asc %}
-      <div>
-        <code>{{ row.sku }}</code
-        ><span title="{{ row.name }}">{{ row.name }}</span
-        ><strong
-          >Rp {{ '{:,.0f}'.format(row.total_sales).replace(',', '.') }}</strong
-        >
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <code>{{ row.sku }}</code>
+        <span class="text-truncate" style="max-width: 160px;" title="{{ row.name }}">{{ row.name }}</span>
+        <strong class="ms-auto text-end" style="white-space: nowrap;">Rp {{ '{:,.0f}'.format(row.total_sales).replace(',', '.') }}</strong>
       </div>
       {% endfor %}
     </div>
@@ -441,16 +467,16 @@ ORDER'])|list %}
             {{ '%.0f'|format(row.inventory_age|default(0)) }} hari
           </td>
           <td class="num">
-            {% if row.on_hand is not none %}{{ '%.1f'|format(row.on_hand) }}
+            {% if row.on_hand is not none %}{{ ('%.' ~ display_rules.coverage_decimal_places ~ 'f')|format(row.on_hand) }}
             hari{% else %}N/A{% endif %}
           </td>
           <td class="num">
-            {% if row.on_way is not none %}{{ '%.1f'|format(row.on_way) }}
+            {% if row.on_way is not none %}{{ ('%.' ~ display_rules.coverage_decimal_places ~ 'f')|format(row.on_way) }}
             hari{% else %}N/A{% endif %}
           </td>
           <td class="num">{{ '{:,.0f}'.format(row.available|default(0)) }}</td>
           <td class="num target-stock">
-            {{ '{:,.0f}'.format(row.target_stock|default(0)) }}
+            {{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.restock_qty|default(0)) }}
           </td>
           <td class="restock-reason">
             <button
@@ -462,16 +488,18 @@ ORDER'])|list %}
               data-name="{{ row.name }}"
               data-reason="{{ row.restock_reason|default('Upload ulang untuk menghitung restock.') }}"
               data-lead="{{ '%.0f'|format(row.lead_time|default(0)) }}"
-              data-target="{{ '{:,.0f}'.format(row.target_stock|default(0)) }}"
+              data-target="{{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.target_stock|default(0)) }}"
               data-current="{{ '{:,.0f}'.format(row.available + row.ordered) }}"
-              data-restock="{{ '{:,.0f}'.format(row.target_stock|default(0)) }}"
+              data-restock="{{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.restock_qty|default(0)) }}"
+              data-winning="{{ row.pareto }}"
+              data-ss-pct="{{ display_rules.winning_safety_stock_pct }}"
               data-previous="{{ '{:,.0f}'.format(calc.previous_sales|default(0)) }}"
               data-current-sales="{{ '{:,.0f}'.format(calc.current_sales|default(0)) }}"
               data-days="{{ calc.sales_days|default(0) }}"
               data-available="{{ '{:,.0f}'.format(calc.available|default(0)) }}"
               data-ordered="{{ '{:,.0f}'.format(calc.ordered|default(0)) }}"
               data-age="{{ '%.0f'|format(row.inventory_age|default(0)) }}"
-              data-ads="{{ '%.2f'|format(row.ads|default(0)) }}"
+              data-ads="{{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.ads|default(0)) }}"
               data-historical="{{ calc.historical_sales|join(',') }}"
               data-projection="{{ calc.projection|default(0) }}"
               data-previous-sales="{{ calc.previous_sales|default(0) }}"
@@ -807,11 +835,11 @@ ORDER'])|list %}
             {{ '{:,.0f}'.format(row.projection) }}
           </td>
           <td data-column="coverage" class="num">
-            {% if row.on_hand is not none %}{{ '%.1f'|format(row.on_hand) }}
+            {% if row.on_hand is not none %}{{ ('%.' ~ display_rules.coverage_decimal_places ~ 'f')|format(row.on_hand) }}
             hr{% else %}N/A{% endif %}
           </td>
           <td data-column="otw" class="num">
-            {% if row.on_way is not none %}{{ '%.1f'|format(row.on_way) }} hr{%
+            {% if row.on_way is not none %}{{ ('%.' ~ display_rules.coverage_decimal_places ~ 'f')|format(row.on_way) }} hr{%
             else %}N/A{% endif %}
           </td>
           <td
@@ -824,7 +852,7 @@ ORDER'])|list %}
             Rp {{ '{:,.0f}'.format(row.total_sales).replace(',', '.') }}
           </td>
           <td data-column="target" class="num target-stock">
-            {{ '{:,.0f}'.format(row.target_stock|default(0)) }}
+            {{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.restock_qty|default(0)) }}
           </td>
           <td
             data-column="reason"
@@ -916,8 +944,11 @@ ORDER'])|list %}
             ><strong id="reason-available"></strong>
           </div>
           <div><span>Dipesan</span><strong id="reason-ordered"></strong></div>
-          <div class="reason-highlight">
-            <span>Rekomendasi stok</span><strong id="reason-restock"></strong>
+          <div class="reason-highlight" style="border-top: 1px solid #e1e8e3; margin-top: 4px; padding-top: 8px;">
+            <span>Kebutuhan Dasar (Harus Stok)</span><strong id="reason-target"></strong>
+          </div>
+          <div class="reason-highlight text-primary">
+            <span>Rekomendasi Restock</span><strong id="reason-restock"></strong>
           </div>
         </div>
         <div class="formula-box formula-toggles">
@@ -925,33 +956,31 @@ ORDER'])|list %}
           <details>
             <summary>Dasar Penjualan</summary>
             <code>Rata-rata 3 Bulan = (Bulan -3 + Bulan -2 + Bulan -1) / 3</code
-            ><code
-              >Proyeksi = Penjualan berjalan × Hari bulan / Hari berjalan</code
             >
             <p class="formula-example" id="formula-sales-example"></p>
           </details>
           <details>
             <summary>ADS</summary>
             <code
-              >ADS = Average(Bulan -3, Bulan -2, Bulan -1, Proyeksi) / Total
-              hari bulan berjalan</code
+              >ADS = Total Penjualan 3 Bulan Terakhir / 3 / Hari Bulan Berjalan</code
             >
             <p class="formula-example" id="formula-ads-example"></p>
           </details>
-          <details>
-            <summary>Target Stok</summary>
+          <details open>
+            <summary>Alur Rekomendasi Restock</summary>
             <code
-              >Umur: Berryman Impor 90 hari · Klevo Impor 90 hari · Berryman
-              Lokal 30 hari</code
-            ><code>Rekomendasi Stok = ceil(ADS × Umur Persediaan)</code>
-            <p class="formula-example" id="formula-stock-example"></p>
+              >Kebutuhan = ADS × Umur Persediaan</code
+            ><code id="formula-safety-section">Safety Stock (Winning / Pareto) = Kebutuhan × <span id="formula-ss-pct-label"></span>%</code>
+            <code>Rekomendasi Restock = Max(0, Kebutuhan + Safety Stock - Stok Available)</code>
+            <p class="formula-example" id="formula-target-example" style="margin-bottom:4px;"></p>
+            <p class="formula-example" id="formula-safety-example" style="margin-bottom:4px;"></p>
+            <p class="formula-example text-primary fw-bold mt-2" id="formula-restock-example"></p>
           </details>
           <details>
             <summary>Coverage</summary>
-            <code>CSOH = Stok Dapat Dijual / Penjualan Bulan 1 Lalu</code>
+            <code>CSOH = Stok Dapat Dijual / Penjualan Bulan -1 Harian</code>
             <code
-              >CSOH + OTW = (Stok Dapat Dijual + Dipesan) / Penjualan Bulan 1
-              Lalu</code
+              >CSOH + OTW = (Stok Dapat Dijual + Dipesan) / Penjualan Bulan -1 Harian</code
             >
             <p class="formula-example" id="formula-coverage-example"></p>
           </details>
@@ -1171,34 +1200,57 @@ ORDER'])|list %}
       document.getElementById("reason-csoh").textContent =
         button.dataset.csoh === "0" && !previousDaily
           ? "N/A"
-          : Number(button.dataset.csoh).toFixed(1) + " hari";
+          : Number(button.dataset.csoh).toFixed(appSettings.coverageDecimals) + " hari";
       document.getElementById("reason-csoh-otw").textContent =
         button.dataset.csohOtw === "0" && !previousDaily
           ? "N/A"
-          : Number(button.dataset.csohOtw).toFixed(1) + " hari";
+          : Number(button.dataset.csohOtw).toFixed(appSettings.coverageDecimals) + " hari";
+      
+      const history = button.dataset.historical.split(",").map(Number);
+      const projection = Number(button.dataset.projection);
+      const days = Number(button.dataset.days);
+      const average = history.reduce((sum, value) => sum + value, 0) / 3;
+      const target = Number(button.dataset.target);
+      const isWinning = button.dataset.winning === "True";
+      const safetyPct = Number(button.dataset.ssPct);
+      const safetyStock = isWinning ? target * (safetyPct / 100) : 0;
+      const available = Number(button.dataset.available);
+      
+      document.getElementById("reason-target").textContent = target.toFixed(appSettings.adsDecimals) + " unit";
       document.getElementById("reason-restock-summary").textContent =
-        button.dataset.restock + " unit";
+        Number(button.dataset.restock).toFixed(appSettings.adsDecimals) + " unit";
       document.getElementById("reason-restock").textContent =
-        button.dataset.restock + " unit";
+        Number(button.dataset.restock).toFixed(appSettings.adsDecimals) + " unit";
+      
       document.getElementById("reason-status").textContent =
         button.dataset.status;
       document.getElementById("reason-status").className =
         "reason-status status-badge status-" +
         button.dataset.status.toLowerCase().replaceAll(" ", "-");
-      const history = button.dataset.historical.split(",").map(Number);
-      const projection = Number(button.dataset.projection);
-      const days = Number(button.dataset.days);
-      const average =
-        (history.reduce((sum, value) => sum + value, 0) + projection) / 4;
+      
       document.getElementById("formula-sales-example").textContent =
-        `Contoh: histori ${history.map((value) => value.toLocaleString("id-ID")).join(" + ")}; proyeksi ${projection.toLocaleString("id-ID")} unit.`;
+        `Contoh: histori ${history.map((value) => value.toLocaleString("id-ID")).join(" + ")} unit.`;
       document.getElementById("formula-ads-example").textContent =
-        `Contoh: (${history.map((value) => value.toLocaleString("id-ID")).join(" + ")} + ${projection.toLocaleString("id-ID")}) / 4 / ${days} = ${Number(button.dataset.ads).toLocaleString("id-ID")} unit/hari.`;
-      document.getElementById("formula-stock-example").textContent =
-        `Contoh: ${Number(button.dataset.ads).toLocaleString("id-ID")} × ${button.dataset.age} = ${button.dataset.target} unit.`;
+        `Contoh: (${history.map((value) => value.toLocaleString("id-ID")).join(" + ")}) / 3 / ${days} = ${Number(button.dataset.ads).toFixed(appSettings.adsDecimals)} unit/hari.`;
+      document.getElementById("formula-target-example").textContent =
+        `Contoh: ${Number(button.dataset.ads).toFixed(appSettings.adsDecimals)} × ${button.dataset.age} = ${target.toFixed(appSettings.adsDecimals)} unit.`;
+      document.getElementById("formula-restock-example").textContent =
+        isWinning
+          ? `Contoh (Winning): (Kebutuhan ${target.toFixed(appSettings.adsDecimals)} + SS ${safetyStock.toFixed(appSettings.adsDecimals)}) - (Stok Available ${available}) = ${Number(button.dataset.restock).toFixed(appSettings.adsDecimals)} unit.`
+          : `Contoh (Normal): Kebutuhan ${target.toFixed(appSettings.adsDecimals)} - Stok Available ${available} = ${Number(button.dataset.restock).toFixed(appSettings.adsDecimals)} unit.`;
+      if (isWinning) {
+        document.getElementById("formula-safety-section").style.display = "block";
+        document.getElementById("formula-ss-pct-label").textContent = safetyPct;
+        document.getElementById("formula-safety-example").textContent =
+          `Contoh: (Safety Stock) ${target.toFixed(appSettings.adsDecimals)} × ${safetyPct}% = ${safetyStock.toFixed(appSettings.adsDecimals)} unit.`;
+        document.getElementById("formula-safety-example").style.display = "block";
+      } else {
+        document.getElementById("formula-safety-section").style.display = "none";
+        document.getElementById("formula-safety-example").style.display = "none";
+      }
       document.getElementById("formula-coverage-example").textContent =
         previousDaily
-          ? `Contoh: CSOH ${button.dataset.available} / ${previousDaily.toLocaleString("id-ID")} = ${Number(button.dataset.csoh).toFixed(1)} hari; CSOH + OTW = ${button.dataset.current} / ${previousDaily.toLocaleString("id-ID")} = ${Number(button.dataset.csohOtw).toFixed(1)} hari.`
+          ? `Contoh: CSOH ${button.dataset.available} / ${previousDaily.toLocaleString("id-ID")} = ${Number(button.dataset.csoh).toFixed(appSettings.coverageDecimals)} hari; CSOH + OTW = ${button.dataset.current} / ${previousDaily.toLocaleString("id-ID")} = ${Number(button.dataset.csohOtw).toFixed(appSettings.coverageDecimals)} hari.`
           : "Contoh tidak tersedia karena subtotal Bulan -1 = 0.";
       document.getElementById("formula-status-example").textContent =
         `Status SKU ini: ${button.dataset.status}.`;
@@ -1220,6 +1272,28 @@ ORDER'])|list %}
   }
   updateClock();
   setInterval(updateClock, 1000);
+
+  async function dismissPantau(sku) {
+    try {
+      const res = await fetch(`/pantau/${encodeURIComponent(sku)}/selesai`, { method: "POST" });
+      if (res.ok) {
+        const row = document.querySelector(`tr[data-sku="${sku}"]`);
+        if (row) row.remove();
+        const counter = document.getElementById("watchlist-count");
+        if (counter) {
+          const current = parseInt(counter.textContent) - 1;
+          counter.textContent = current;
+          if (current <= 0) {
+            document.getElementById("watchlist-alarm")?.remove();
+            document.getElementById("watchlist-section")?.remove();
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Gagal memperbarui status pantau.");
+    }
+  }
 </script>
 {% if request.query_params.get('print') %}
 <script>
