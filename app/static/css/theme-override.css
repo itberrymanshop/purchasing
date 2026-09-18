@@ -109,3 +109,123 @@
   border: 1px solid #fecaca;
   color: var(--brand-red);
 }
+
+/* MODAL FONT SIZE OVERRIDES */
+#reason-modal .modal-title {
+  font-size: 1.15rem !important;
+}
+
+.reason-product strong {
+  font-size: 1.1rem !important;
+}
+
+.reason-product code {
+  font-size: 0.95rem !important;
+}
+
+.reason-summary span {
+  font-size: 0.7rem !important;
+}
+
+.reason-summary strong {
+  font-size: 1.15rem !important;
+}
+
+#reason-modal .reason-grid span {
+  font-size: 0.8rem !important;
+}
+
+#reason-modal .reason-grid strong {
+  font-size: 0.95rem !important;
+}
+
+.formula-toggles summary {
+  font-size: 0.95rem !important;
+}
+
+.formula-toggles details code {
+  font-size: 0.8rem !important;
+  line-height: 1.6 !important;
+}
+
+.formula-example {
+  font-size: 0.85rem !important;
+  line-height: 1.5 !important;
+}
+
+#reason-modal .reason-source {
+  font-size: 0.8rem !important;
+}
+
+#reason-modal .reason-source ul {
+  font-size: 0.8rem !important;
+}
+
+/* Adjust formula box title and overall padding to match larger text */
+.formula-box strong {
+  font-size: 0.9rem !important;
+}
+
+#reason-modal .reason-highlight span {
+  font-size: 0.85rem !important;
+}
+
+#reason-modal .reason-highlight strong {
+  font-size: 1.05rem !important;
+}
+
+/* MODAL SUBTEXT FIX */
+.reason-highlight span small {
+  font-size: 0.75rem !important; /* Perbesar sedikit tulisan penjelas */
+  margin-top: 4px; /* Beri jarak sedikit dari judul di atasnya */
+  color: #64748b; /* Pastikan warnanya abu-abu agar tidak terlalu dominan */
+}
+
+/* Modal sales history row: 4 columns in one row */
+#reason-modal .reason-sales-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+#reason-modal .reason-sales-row > div {
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+#reason-modal .reason-sales-row span {
+  display: block;
+  color: #64748b;
+  font-size: 0.8rem !important;
+  font-weight: 700;
+}
+
+#reason-modal .reason-sales-row strong {
+  display: block;
+  margin-top: 4px;
+  color: #0f172a;
+  font-size: 1rem !important;
+  font-weight: 800;
+}
+
+@media (max-width: 700px) {
+  #reason-modal .reason-sales-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Modal safety stock note sizing */
+#reason-modal #reason-safety-title {
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+}
+
+#reason-modal #reason-safety-note {
+  font-size: 0.78rem !important;
+  line-height: 1.35 !important;
+  margin-top: 5px !important;
+  color: #64748b !important;
+}

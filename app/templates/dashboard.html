@@ -1,12 +1,10 @@
 {% extends "base.html" %} {% block title %}Dashboard · Purchasing{% endblock
 %}{% block body_class %}{% if request.query_params.get('print')
-%}print-dashboard{% endif %}{% endblock %}{% block styles %}<link
-  href="{{ url_for('static', path='css/sparkline.css') }}"
-  rel="stylesheet"
-/>{% if request.query_params.get('print') %}<link
-  href="{{ url_for('static', path='css/print-dashboard.css') }}"
-  rel="stylesheet"
-/>{% endif %}{% endblock %} {% block content %}
+%}print-dashboard{% endif %}{% endblock %}{% block styles %}
+<link href="{{ url_for('static', path='css/sparkline.css') }}" rel="stylesheet" />{% if
+request.query_params.get('print') %}
+<link href="{{ url_for('static', path='css/print-dashboard.css') }}" rel="stylesheet" />{% endif %}{% endblock %} {%
+block content %}
 <div class="dashboard-hero dashboard-hero-desktop">
   <div>
     <div class="eyebrow">LAPORAN AKTIF</div>
@@ -20,17 +18,13 @@
     <div class="date-widget">
       <i class="bi bi-calendar3"></i>
       <div>
-        <small id="today-label">Hari ini</small
-        ><strong id="today-date">-</strong>
+        <small id="today-label">Hari ini</small><strong id="today-date">-</strong>
       </div>
     </div>
     <div class="clock-widget">
-      <i class="bi bi-clock"></i><strong id="digital-clock">00:00:00</strong
-      ><small>Waktu lokal</small>
+      <i class="bi bi-clock"></i><strong id="digital-clock">00:00:00</strong><small>Waktu lokal</small>
     </div>
-    <a class="btn btn-light btn-sm" href="/"
-      ><i class="bi bi-cloud-arrow-up"></i> Upload Baru</a
-    >
+    <a class="btn btn-light btn-sm" href="/"><i class="bi bi-cloud-arrow-up"></i> Upload Baru</a>
   </div>
 </div>
 
@@ -38,18 +32,31 @@
 <div class="alert alert-danger d-flex align-items-center mb-4" id="watchlist-alarm">
   <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
   <div>
-    <strong>Perhatian!</strong> Ada <span id="watchlist-count">{{ watchlist|length }}</span> SKU dengan rata-rata penjualan harian melebihi batas abnormal ({{ abnormal_multiplier }}x ADS).
+    <strong>Perhatian!</strong> Ada <span id="watchlist-count">{{ watchlist|length }}</span> SKU dengan rata-rata
+    penjualan harian melebihi batas abnormal ({{ abnormal_multiplier }}x ADS).
     <a href="#watchlist-section" class="alert-link ms-2">Lihat Daftar Pantau</a>
   </div>
 </div>
 
 <section class="card mb-4" id="watchlist-section">
   <div class="panel-head">
-    <div><span class="eyebrow">ALARM ABNORMAL</span><h2>Daftar Pantau</h2><p class="text-muted mb-0">Penjualan harian melampaui batas wajar ({{ abnormal_multiplier }}x ADS).</p></div>
+    <div><span class="eyebrow">ALARM ABNORMAL</span>
+      <h2>Daftar Pantau</h2>
+      <p class="text-muted mb-0">Penjualan harian melampaui batas wajar ({{ abnormal_multiplier }}x ADS).</p>
+    </div>
   </div>
   <div class="table-responsive">
     <table class="table align-middle">
-      <thead><tr><th>SKU</th><th>Nama Barang</th><th>Penjualan Harian</th><th>ADS</th><th>Selisih</th><th></th></tr></thead>
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Nama Barang</th>
+          <th>Penjualan Harian</th>
+          <th>ADS</th>
+          <th>Selisih</th>
+          <th></th>
+        </tr>
+      </thead>
       <tbody id="watchlist-body">
         {% for row in watchlist %}
         <tr data-sku="{{ row.sku }}">
@@ -58,7 +65,8 @@
           <td>{{ '%.2f'|format(row.daily_sales) }}</td>
           <td>{{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.ads) }}</td>
           <td><strong class="text-danger">+{{ '%.1f'|format(row.abnormal_pct) }}%</strong></td>
-          <td><button class="btn btn-sm btn-outline-success" type="button" onclick="dismissPantau('{{ row.sku }}')">Selesai</button></td>
+          <td><button class="btn btn-sm btn-outline-success" type="button"
+              onclick="dismissPantau('{{ row.sku }}')">Selesai</button></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -112,9 +120,7 @@
       <div class="metric">
         Rp {{ '{:,.0f}'.format(summary.impor).replace(',', '.') }}
       </div>
-      <small class="metric-share"
-        >{{ '%.1f'|format(summary.impor_pct) }}% dari total omzet</small
-      >
+      <small class="metric-share">{{ '%.1f'|format(summary.impor_pct) }}% dari total omzet</small>
     </div>
   </div>
   <div class="col-6 col-xl">
@@ -124,9 +130,7 @@
       <div class="metric">
         Rp {{ '{:,.0f}'.format(summary.lokal).replace(',', '.') }}
       </div>
-      <small class="metric-share"
-        >{{ '%.1f'|format(summary.lokal_pct) }}% dari total omzet</small
-      >
+      <small class="metric-share">{{ '%.1f'|format(summary.lokal_pct) }}% dari total omzet</small>
     </div>
   </div>
   <div class="col-6 col-xl">
@@ -136,9 +140,7 @@
       <div class="metric">
         Rp {{ '{:,.0f}'.format(summary.pm).replace(',', '.') }}
       </div>
-      <small class="metric-share"
-        >{{ '%.1f'|format(summary.pm_pct) }}% dari total omzet</small
-      >
+      <small class="metric-share">{{ '%.1f'|format(summary.pm_pct) }}% dari total omzet</small>
     </div>
   </div>
   <div class="col-6 col-xl">
@@ -148,9 +150,7 @@
       <div class="metric">
         Rp {{ '{:,.0f}'.format(summary.np).replace(',', '.') }}
       </div>
-      <small class="metric-share"
-        >{{ '%.1f'|format(summary.np_pct) }}% dari total omzet</small
-      >
+      <small class="metric-share">{{ '%.1f'|format(summary.np_pct) }}% dari total omzet</small>
     </div>
   </div>
 </div>
@@ -167,16 +167,12 @@
     </div>
     <div class="donut-breakdown">
       <div>
-        <span class="dot dot-blue"></span><small>Impor</small
-        ><strong
-          >Rp {{ '{:,.0f}'.format(summary.impor).replace(',', '.') }}</strong
-        ><em>{{ '%.1f'|format(summary.impor_pct) }}%</em>
+        <span class="dot dot-blue"></span><small>Impor</small><strong>Rp {{ '{:,.0f}'.format(summary.impor).replace(',',
+          '.') }}</strong><em>{{ '%.1f'|format(summary.impor_pct) }}%</em>
       </div>
       <div>
-        <span class="dot dot-green"></span><small>Lokal</small
-        ><strong
-          >Rp {{ '{:,.0f}'.format(summary.lokal).replace(',', '.') }}</strong
-        ><em>{{ '%.1f'|format(summary.lokal_pct) }}%</em>
+        <span class="dot dot-green"></span><small>Lokal</small><strong>Rp {{
+          '{:,.0f}'.format(summary.lokal).replace(',', '.') }}</strong><em>{{ '%.1f'|format(summary.lokal_pct) }}%</em>
       </div>
     </div>
   </article>
@@ -188,14 +184,12 @@
     <div class="donut-chart-wrap"><canvas id="pm-np-chart"></canvas></div>
     <div class="donut-breakdown">
       <div>
-        <span class="dot dot-sky"></span><small>PM</small
-        ><strong>Rp {{ '{:,.0f}'.format(summary.pm).replace(',', '.') }}</strong
-        ><em>{{ '%.1f'|format(summary.pm_pct) }}%</em>
+        <span class="dot dot-sky"></span><small>PM</small><strong>Rp {{ '{:,.0f}'.format(summary.pm).replace(',', '.')
+          }}</strong><em>{{ '%.1f'|format(summary.pm_pct) }}%</em>
       </div>
       <div>
-        <span class="dot dot-amber"></span><small>NP</small
-        ><strong>Rp {{ '{:,.0f}'.format(summary.np).replace(',', '.') }}</strong
-        ><em>{{ '%.1f'|format(summary.np_pct) }}%</em>
+        <span class="dot dot-amber"></span><small>NP</small><strong>Rp {{ '{:,.0f}'.format(summary.np).replace(',', '.')
+          }}</strong><em>{{ '%.1f'|format(summary.np_pct) }}%</em>
       </div>
     </div>
   </article>
@@ -206,7 +200,7 @@
     coverageDecimals: {{ display_rules.coverage_decimal_places }},
     adsDecimals: {{ display_rules.ads_decimal_places }}
   };
-  window.addEventListener('load',()=>{const donutLabelsPlugin={id:'donutLabels',afterDraw(chart){const dataset=chart.data.datasets[0];const meta=chart.getDatasetMeta(0);const total=dataset.data.reduce((sum,value)=>sum+value,0);const ctx=chart.ctx;const colors=dataset.backgroundColor;ctx.save();ctx.font='600 10px Manrope, Arial, sans-serif';ctx.textBaseline='middle';meta.data.forEach((arc,index)=>{const angle=(arc.startAngle+arc.endAngle)/2;const startRadius=arc.outerRadius+3;const lineRadius=arc.outerRadius+11;const x1=arc.x+Math.cos(angle)*startRadius;const y1=arc.y+Math.sin(angle)*startRadius;const x2=arc.x+Math.cos(angle)*lineRadius;const y2=arc.y+Math.sin(angle)*lineRadius;const right=Math.cos(angle)>=0;const x3=x2+(right?10:-10);const percent=total?((dataset.data[index]/total)*100).toFixed(1):'0.0';ctx.strokeStyle=colors[index];ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y2);ctx.stroke();ctx.fillStyle='#68756d';ctx.textAlign=right?'left':'right';ctx.fillText(`${chart.data.labels[index]} ${percent}%`,x3+(right?4:-4),y2);});ctx.restore();}};const donutOptions={responsive:true,maintainAspectRatio:false,cutout:'68%',layout:{padding:{left:70,right:70,top:10,bottom:10}},plugins:{legend:{display:false},tooltip:{callbacks:{label:(context)=>{const total=context.dataset.data.reduce((sum,value)=>sum+value,0);const value=context.raw||0;return ` ${context.label}: Rp ${new Intl.NumberFormat('id-ID').format(value)} (${total?((value/total)*100).toFixed(1):0}%)`;}}}}};const importCanvas=document.getElementById('import-local-chart');const taxCanvas=document.getElementById('pm-np-chart');if(window.Chart&&importCanvas)new Chart(importCanvas,{type:'doughnut',plugins:[donutLabelsPlugin],data:{labels:['Impor','Lokal'],datasets:[{data:[{{ summary.impor }},{{ summary.lokal }}],backgroundColor:['#2563eb','#16a34a'],borderWidth:0}]},options:donutOptions});if(window.Chart&&taxCanvas)new Chart(taxCanvas,{type:'doughnut',plugins:[donutLabelsPlugin],data:{labels:['PM','NP'],datasets:[{data:[{{ summary.pm }},{{ summary.np }}],backgroundColor:['#0ea5e9','#f59e0b'],borderWidth:0}]},options:donutOptions});});
+  window.addEventListener('load', () => { const donutLabelsPlugin = { id: 'donutLabels', afterDraw(chart) { const dataset = chart.data.datasets[0]; const meta = chart.getDatasetMeta(0); const total = dataset.data.reduce((sum, value) => sum + value, 0); const ctx = chart.ctx; const colors = dataset.backgroundColor; ctx.save(); ctx.font = '600 10px Manrope, Arial, sans-serif'; ctx.textBaseline = 'middle'; meta.data.forEach((arc, index) => { const angle = (arc.startAngle + arc.endAngle) / 2; const startRadius = arc.outerRadius + 3; const lineRadius = arc.outerRadius + 11; const x1 = arc.x + Math.cos(angle) * startRadius; const y1 = arc.y + Math.sin(angle) * startRadius; const x2 = arc.x + Math.cos(angle) * lineRadius; const y2 = arc.y + Math.sin(angle) * lineRadius; const right = Math.cos(angle) >= 0; const x3 = x2 + (right ? 10 : -10); const percent = total ? ((dataset.data[index] / total) * 100).toFixed(1) : '0.0'; ctx.strokeStyle = colors[index]; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y2); ctx.stroke(); ctx.fillStyle = '#68756d'; ctx.textAlign = right ? 'left' : 'right'; ctx.fillText(`${chart.data.labels[index]} ${percent}%`, x3 + (right ? 4 : -4), y2); }); ctx.restore(); } }; const donutOptions = { responsive: true, maintainAspectRatio: false, cutout: '68%', layout: { padding: { left: 70, right: 70, top: 10, bottom: 10 } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => { const total = context.dataset.data.reduce((sum, value) => sum + value, 0); const value = context.raw || 0; return ` ${context.label}: Rp ${new Intl.NumberFormat('id-ID').format(value)} (${total ? ((value / total) * 100).toFixed(1) : 0}%)`; } } } } }; const importCanvas = document.getElementById('import-local-chart'); const taxCanvas = document.getElementById('pm-np-chart'); if (window.Chart && importCanvas) new Chart(importCanvas, { type: 'doughnut', plugins: [donutLabelsPlugin], data: { labels: ['Impor', 'Lokal'], datasets: [{ data: [{{ summary.impor }}, {{ summary.lokal }}], backgroundColor: ['#2563eb', '#16a34a'], borderWidth: 0 }]}, options: donutOptions}); if (window.Chart && taxCanvas) new Chart(taxCanvas, { type: 'doughnut', plugins: [donutLabelsPlugin], data: { labels: ['PM', 'NP'], datasets: [{ data: [{{ summary.pm }}, {{ summary.np }}], backgroundColor: ['#0ea5e9', '#f59e0b'], borderWidth: 0 }]}, options: donutOptions});});
 </script>
 
 <section class="insight-grid">
@@ -218,13 +212,11 @@
     <canvas id="trend-chart" height="115"></canvas>
     <div class="chart-percentages small text-muted">
       {% for item in trend_totals[:-1] %}<span
-        class="{% if item.pct_change is none %}trend-neutral{% elif item.pct_change > 0 %}trend-up{% elif item.pct_change < 0 %}trend-down{% else %}trend-neutral{% endif %}"
-        >{% if item.pct_change is none %}{{ item.label }}: —{% elif
+        class="{% if item.pct_change is none %}trend-neutral{% elif item.pct_change > 0 %}trend-up{% elif item.pct_change < 0 %}trend-down{% else %}trend-neutral{% endif %}">{%
+        if item.pct_change is none %}{{ item.label }}: —{% elif
         item.pct_change > 0 %}{{ item.label }}: ↑ {{
-        '%.1f'|format(item.pct_change) }}%{% elif item.pct_change < 0 %}{{
-        item.label }}: ↓ {{ '%.1f'|format(item.pct_change|abs) }}%{% else %}{{
-        item.label }}: — 0.0%{% endif %}</span
-      >{% endfor %}
+        '%.1f'|format(item.pct_change) }}%{% elif item.pct_change < 0 %}{{ item.label }}: ↓ {{ '%.1f'
+          |format(item.pct_change|abs) }}%{% else %}{{ item.label }}: — 0.0%{% endif %}</span>{% endfor %}
     </div>
   </article>
   <article class="card insight-card">
@@ -234,18 +226,12 @@
     </div>
     <canvas id="branch-trend-chart" height="115"></canvas>
     <div class="chart-percentages branch-percentages small text-muted">
-      {% for index in range(branch_trend.grosir|length) %}<span
-        class="branch-month"
-        ><b>{{ branch_trend.grosir[index].label }}</b
-        ><em class="branch-grosir"
-          >Grosir {{ '%.1f'|format(branch_trend.grosir[index].pct) }}%</em
-        ><em class="branch-marketplace"
-          >Marketplace {{ '%.1f'|format(branch_trend.marketplace[index].pct)
-          }}%</em
-        ><em class="branch-klevo"
-          >Klevo {{ '%.1f'|format(branch_trend.klevo[index].pct) }}%</em
-        ></span
-      >{% endfor %}
+      {% for index in range(branch_trend.grosir|length) %}<span class="branch-month"><b>{{
+          branch_trend.grosir[index].label }}</b><em class="branch-grosir">Grosir {{
+          '%.1f'|format(branch_trend.grosir[index].pct) }}%</em><em class="branch-marketplace">Marketplace {{
+          '%.1f'|format(branch_trend.marketplace[index].pct)
+          }}%</em><em class="branch-klevo">Klevo {{ '%.1f'|format(branch_trend.klevo[index].pct) }}%</em></span>{%
+      endfor %}
     </div>
   </article>
   <article class="card insight-card">
@@ -258,7 +244,8 @@
       <div class="d-flex align-items-center gap-2 mb-2">
         <code>{{ row.sku }}</code>
         <span class="text-truncate" style="max-width: 150px;" title="{{ row.name }}">{{ row.name }}</span>
-        <strong class="text-success ms-auto text-end" style="white-space: nowrap;">+{{ row.sales_diff }} unit (+{{ '%.1f'|format(row.sales_diff_pct) }}%)</strong>
+        <strong class="text-success ms-auto text-end" style="white-space: nowrap;">+{{ row.sales_diff }} unit (+{{
+          '%.1f'|format(row.sales_diff_pct) }}%)</strong>
       </div>
       {% else %}
       <p class="text-muted small">Belum ada data growth.</p>
@@ -275,11 +262,12 @@
       <div class="d-flex align-items-center gap-2 mb-2">
         <code>{{ row.sku }}</code>
         <span class="text-truncate" style="max-width: 150px;" title="{{ row.name }}">{{ row.name }}</span>
-        <strong class="text-danger ms-auto text-end" style="white-space: nowrap;">{{ row.sales_diff }} unit ({{ '%.1f'|format(row.sales_diff_pct) }}%)</strong>
+        <strong class="text-danger ms-auto text-end" style="white-space: nowrap;">{{ row.sales_diff }} unit ({{
+          '%.1f'|format(row.sales_diff_pct) }}%)</strong>
       </div>
       {% else %}
       <p class="text-muted small">Belum ada data decline.</p>
-      {% endfor %} 
+      {% endfor %}
     </div>
   </article>
   <article class="card insight-card">
@@ -292,7 +280,8 @@
       <div class="d-flex align-items-center gap-2 mb-2">
         <code>{{ row.sku }}</code>
         <span class="text-truncate" style="max-width: 160px;" title="{{ row.name }}">{{ row.name }}</span>
-        <strong class="ms-auto text-end" style="white-space: nowrap;">Rp {{ '{:,.0f}'.format(row.total_sales).replace(',', '.') }}</strong>
+        <strong class="ms-auto text-end" style="white-space: nowrap;">Rp {{
+          '{:,.0f}'.format(row.total_sales).replace(',', '.') }}</strong>
       </div>
       {% endfor %}
     </div>
@@ -307,7 +296,8 @@
       <div class="d-flex align-items-center gap-2 mb-2">
         <code>{{ row.sku }}</code>
         <span class="text-truncate" style="max-width: 160px;" title="{{ row.name }}">{{ row.name }}</span>
-        <strong class="ms-auto text-end" style="white-space: nowrap;">Rp {{ '{:,.0f}'.format(row.total_sales).replace(',', '.') }}</strong>
+        <strong class="ms-auto text-end" style="white-space: nowrap;">Rp {{
+          '{:,.0f}'.format(row.total_sales).replace(',', '.') }}</strong>
       </div>
       {% endfor %}
     </div>
@@ -315,7 +305,7 @@
 </section>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
 <script>
-  const trendTotals = {{ trend_totals[:-1]|tojson }};
+  const trendTotals = {{ trend_totals[:-1]| tojson }};
   new Chart(document.getElementById('trend-chart'), {
     type: 'line',
     data: {
@@ -341,22 +331,18 @@
   });
 </script>
 <script>
-  const branchTrend={{ branch_trend|tojson }};const branchLabels=branchTrend.grosir.map(item=>item.label);new Chart(document.getElementById('branch-trend-chart'),{type:'line',data:{labels:branchLabels,datasets:[{label:'Grosir',data:branchTrend.grosir.map(item=>item.value),borderColor:'#2563eb',tension:.35},{label:'Marketplace',data:branchTrend.marketplace.map(item=>item.value),borderColor:'#d97706',tension:.35},{label:'Klevo',data:branchTrend.klevo.map(item=>item.value),borderColor:'#16a34a',tension:.35}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}},tooltip:{callbacks:{label(context){const item=branchTrend[context.dataset.label.toLowerCase()][context.dataIndex];return `${context.dataset.label}: Rp ${item.value.toLocaleString('id-ID')} (${item.pct.toFixed(1)}%)`;}}}},scales:{y:{beginAtZero:true,ticks:{callback:value=>`Rp ${Number(value).toLocaleString('id-ID')}`}}}}});
+  const branchTrend = {{ branch_trend| tojson }}; const branchLabels = branchTrend.grosir.map(item => item.label); new Chart(document.getElementById('branch-trend-chart'), { type: 'line', data: { labels: branchLabels, datasets: [{ label: 'Grosir', data: branchTrend.grosir.map(item => item.value), borderColor: '#2563eb', tension: .35 }, { label: 'Marketplace', data: branchTrend.marketplace.map(item => item.value), borderColor: '#d97706', tension: .35 }, { label: 'Klevo', data: branchTrend.klevo.map(item => item.value), borderColor: '#16a34a', tension: .35 }] }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }, tooltip: { callbacks: { label(context) { const item = branchTrend[context.dataset.label.toLowerCase()][context.dataIndex]; return `${context.dataset.label}: Rp ${item.value.toLocaleString('id-ID')} (${item.pct.toFixed(1)}%)`; } } } }, scales: { y: { beginAtZero: true, ticks: { callback: value => `Rp ${Number(value).toLocaleString('id-ID')}` } } } } });
 </script>
 <section class="card ads-section">
   <div class="restock-header">
     <div>
       <div class="eyebrow">ANALISIS COVERAGE</div>
       <h2>ADS dan Coverage</h2>
-      <span
-        >Rata-rata 4 nilai (3 bulan histori + proyeksi bulan berjalan) untuk
-        dasar coverage</span
-      >
     </div>
     {% if rows %}
     <div class="coverage-period">
-      <span>Bulan berjalan</span><strong>{{ month_labels[-1].label }}</strong
-      ><b>{{ rows[0].calculation.sales_days|default(0) }} hari</b>
+      <span>Bulan berjalan</span><strong>{{ month_labels[-1].label }}</strong><b>{{
+        rows[0].calculation.sales_days|default(0) }} hari</b>
     </div>
     {% endif %}
   </div>
@@ -379,9 +365,7 @@
       </thead>
       <tbody>
         {% for row in rows %}
-        <tr
-          class="{% if row.condition == 'DISCONTINUE' %}discontinue-row{% endif %}"
-        >
+        <tr class="{% if row.condition == 'DISCONTINUE' %}discontinue-row{% endif %}">
           <td><code class="sku-code">{{ row.sku }}</code></td>
           <td class="product-name"><strong>{{ row.name }}</strong></td>
           {% for month in row.month_order[:3] %}
@@ -409,12 +393,10 @@
             hari{% else %}N/A{% endif %}
           </td>
           <td>
-            <span
-              class="status-badge status-{{ row.status|lower|replace(' ', '-') }}"
-              >{{ {'CRITICAL': 'Kritis', 'NEED ORDER': 'Order', 'SUFFICIENT':
+            <span class="status-badge status-{{ row.status|lower|replace(' ', '-') }}">{{ {'CRITICAL': 'Kritis', 'NEED
+              ORDER': 'Order', 'SUFFICIENT':
               'Aman', 'DISCONTINUE': 'DISCONTINUE'}.get(row.status, row.status)
-              }}</span
-            >
+              }}</span>
           </td>
         </tr>
         {% endfor %}
@@ -454,20 +436,17 @@ ORDER'])|list %}
         <tr>
           <td><code class="sku-code">{{ row.sku }}</code></td>
           <td class="product-name">
-            <strong>{{ row.name }}</strong
-            ><small>{{ row.supplier or '-' }}</small>
+            <strong>{{ row.name }}</strong><small>{{ row.supplier or '-' }}</small>
           </td>
           <td>
-            <span
-              class="info-badge {% if row.kind == 'IMPOR' %}impor{% else %}lokal{% endif %}"
-              >{{ row.kind }}</span
-            >
+            <span class="info-badge {% if row.kind == 'IMPOR' %}impor{% else %}lokal{% endif %}">{{ row.kind }}</span>
           </td>
           <td class="num">
             {{ '%.0f'|format(row.inventory_age|default(0)) }} hari
           </td>
           <td class="num">
-            {% if row.on_hand is not none %}{{ ('%.' ~ display_rules.coverage_decimal_places ~ 'f')|format(row.on_hand) }}
+            {% if row.on_hand is not none %}{{ ('%.' ~ display_rules.coverage_decimal_places ~ 'f')|format(row.on_hand)
+            }}
             hari{% else %}N/A{% endif %}
           </td>
           <td class="num">
@@ -479,20 +458,14 @@ ORDER'])|list %}
             {{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.restock_qty|default(0)) }}
           </td>
           <td class="restock-reason">
-            <button
-              type="button"
-              class="reason-button"
-              data-bs-toggle="modal"
-              data-bs-target="#reason-modal"
-              data-sku="{{ row.sku }}"
-              data-name="{{ row.name }}"
+            <button type="button" class="reason-button" data-bs-toggle="modal" data-bs-target="#reason-modal"
+              data-sku="{{ row.sku }}" data-name="{{ row.name }}"
               data-reason="{{ row.restock_reason|default('Upload ulang untuk menghitung restock.') }}"
               data-lead="{{ '%.0f'|format(row.lead_time|default(0)) }}"
               data-target="{{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.target_stock|default(0)) }}"
               data-current="{{ '{:,.0f}'.format(row.available + row.ordered) }}"
               data-restock="{{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.restock_qty|default(0)) }}"
-              data-winning="{{ row.pareto }}"
-              data-ss-pct="{{ display_rules.winning_safety_stock_pct }}"
+              data-winning="{{ row.pareto }}" data-ss-pct="{{ display_rules.winning_safety_stock_pct }}"
               data-previous="{{ '{:,.0f}'.format(calc.previous_sales|default(0)) }}"
               data-current-sales="{{ '{:,.0f}'.format(calc.current_sales|default(0)) }}"
               data-days="{{ calc.sales_days|default(0) }}"
@@ -500,24 +473,20 @@ ORDER'])|list %}
               data-ordered="{{ '{:,.0f}'.format(calc.ordered|default(0)) }}"
               data-age="{{ '%.0f'|format(row.inventory_age|default(0)) }}"
               data-ads="{{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.ads|default(0)) }}"
-              data-historical="{{ calc.historical_sales|join(',') }}"
-              data-projection="{{ calc.projection|default(0) }}"
+              data-historical="{{ calc.historical_sales|join(',') }}" data-history-labels="{{ month_labels[:3]|map(attribute='label')|join(',') }}" data-current-label="{{ month_labels[-1].label if month_labels else 'Berjalan' }}" data-projection="{{ calc.projection|default(0) }}"
               data-previous-sales="{{ calc.previous_sales|default(0) }}"
               data-previous-daily="{{ calc.previous_daily_sales|default(0) }}"
               data-csoh="{{ row.on_hand if row.on_hand is not none else 0 }}"
               data-csoh-otw="{{ row.on_way if row.on_way is not none else 0 }}"
-              data-status="{{ {'CRITICAL': 'Kritis', 'NEED ORDER': 'Order', 'SUFFICIENT': 'Aman', 'DISCONTINUE': 'DISCONTINUE', 'N/A': 'N/A'}.get(row.status, row.status) }}"
-            >
+              data-status="{{ {'CRITICAL': 'Kritis', 'NEED ORDER': 'Order', 'SUFFICIENT': 'Aman', 'DISCONTINUE': 'DISCONTINUE', 'N/A': 'N/A'}.get(row.status, row.status) }}">
               <i class="bi bi-info-circle"></i> Lihat alasan
             </button>
           </td>
           <td>
-            <span
-              class="status-badge status-{{ row.status|lower|replace(' ', '-') }}"
-              >{{ {'CRITICAL': 'Kritis', 'NEED ORDER': 'Order', 'SUFFICIENT':
+            <span class="status-badge status-{{ row.status|lower|replace(' ', '-') }}">{{ {'CRITICAL': 'Kritis', 'NEED
+              ORDER': 'Order', 'SUFFICIENT':
               'Aman', 'DISCONTINUE': 'DISCONTINUE'}.get(row.status, row.status)
-              }}</span
-            >
+              }}</span>
           </td>
         </tr>
         {% else %}
@@ -535,63 +504,38 @@ ORDER'])|list %}
   <div class="report-toolbar">
     <div>
       <h2>Detail stok dan penjualan</h2>
-      <span
-        ><strong>{{ rows|length }}</strong> SKU · klik header bulan untuk
-        breakdown cabang</span
-      >
+      <span><strong>{{ rows|length }}</strong> SKU · klik header bulan untuk
+        breakdown cabang</span>
     </div>
     <div class="table-actions">
-      <a class="btn btn-outline-secondary btn-sm" href="/export/excel"
-        ><i class="bi bi-file-earmark-spreadsheet"></i> Excel</a
-      ><a class="btn btn-outline-secondary btn-sm" href="/export/pdf"
-        ><i class="bi bi-printer"></i> Cetak / PDF</a
-      >
-      <button
-        class="btn btn-outline-secondary btn-sm"
-        type="button"
-        data-bs-toggle="modal"
-        data-bs-target="#column-settings"
-      >
+      <a class="btn btn-outline-secondary btn-sm" href="/export/excel"><i class="bi bi-file-earmark-spreadsheet"></i>
+        Excel</a><a class="btn btn-outline-secondary btn-sm" href="/export/pdf"><i class="bi bi-printer"></i> Cetak /
+        PDF</a>
+      <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="modal"
+        data-bs-target="#column-settings">
         <i class="bi bi-layout-three-columns"></i> Kolom
       </button>
-      <div
-        class="modal fade"
-        id="column-settings"
-        tabindex="-1"
-        aria-labelledby="column-settings-title"
-        aria-hidden="true"
-      >
+      <div class="modal fade" id="column-settings" tabindex="-1" aria-labelledby="column-settings-title"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="column-settings-title">
                 Tampilkan kolom
               </h5>
-              <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Tutup"
-              ></button>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
               <div class="preset-buttons">
                 <button type="button" onclick="applyPreset('ringkas')">
-                  Ringkas</button
-                ><button type="button" onclick="applyPreset('purchasing')">
-                  Purchasing</button
-                ><button type="button" onclick="applyPreset('lengkap')">
-                  Lengkap</button
-                ><button type="button" onclick="resetColumns()">Reset</button>
+                  Ringkas</button><button type="button" onclick="applyPreset('purchasing')">
+                  Purchasing</button><button type="button" onclick="applyPreset('lengkap')">
+                  Lengkap</button><button type="button" onclick="resetColumns()">Reset</button>
               </div>
               <div id="column-checkboxes"></div>
             </div>
             <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-primary btn-sm"
-                data-bs-dismiss="modal"
-              >
+              <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">
                 Selesai
               </button>
             </div>
@@ -599,12 +543,8 @@ ORDER'])|list %}
         </div>
       </div>
       <div class="search-box">
-        <i class="bi bi-search"></i
-        ><input
-          id="search-input"
-          placeholder="Cari SKU / nama / supplier"
-          oninput="applyFilters()"
-        />
+        <i class="bi bi-search"></i><input id="search-input" placeholder="Cari SKU / nama / supplier"
+          oninput="applyFilters()" />
       </div>
       <select id="status-filter" onchange="applyFilters()">
         <option value="">Semua status</option>
@@ -618,18 +558,9 @@ ORDER'])|list %}
         <option>IMPOR</option>
         <option>LOKAL</option>
       </select>
-      <label class="discontinue-toggle"
-        ><input
-          id="show-discontinue"
-          type="checkbox"
-          onchange="applyFilters()"
-        /><span>Tampilkan discontinue</span></label
-      >
-      <button
-        class="btn btn-outline-secondary btn-sm"
-        type="button"
-        onclick="toggleAllMonths()"
-      >
+      <label class="discontinue-toggle"><input id="show-discontinue" type="checkbox"
+          onchange="applyFilters()" /><span>Tampilkan discontinue</span></label>
+      <button class="btn btn-outline-secondary btn-sm" type="button" onclick="toggleAllMonths()">
         <i class="bi bi-arrows-expand"></i> Bulan
       </button>
     </div>
@@ -653,31 +584,18 @@ ORDER'])|list %}
           <th data-column="tax">PM / NP</th>
           <th data-column="import">IMPOR</th>
           {% for month in month_labels %}
-          <th
-            data-column="month{{ loop.index0 }}"
-            class="branch-column month-{{ loop.index0 }}"
-          >
+          <th data-column="month{{ loop.index0 }}" class="branch-column month-{{ loop.index0 }}">
             <span>(GR)</span><small>{{ month.label }}</small>
           </th>
-          <th
-            data-column="month{{ loop.index0 }}"
-            class="branch-column month-{{ loop.index0 }}"
-          >
+          <th data-column="month{{ loop.index0 }}" class="branch-column month-{{ loop.index0 }}">
             <span>(MP)</span><small>{{ month.label }}</small>
           </th>
-          <th
-            data-column="month{{ loop.index0 }}"
-            class="branch-column month-{{ loop.index0 }}"
-          >
+          <th data-column="month{{ loop.index0 }}" class="branch-column month-{{ loop.index0 }}">
             <span>(KL)</span><small>{{ month.label }}</small>
           </th>
           <th data-column="month{{ loop.index0 }}" class="month-head">
-            <button
-              type="button"
-              class="month-toggle"
-              data-month-index="{{ loop.index0 }}"
-              onclick="toggleMonth({{ loop.index0 }})"
-            >
+            <button type="button" class="month-toggle" data-month-index="{{ loop.index0 }}"
+              onclick="toggleMonth({{ loop.index0 }})">
               {{ month.label }} <i class="bi bi-chevron-down"></i>
             </button>
           </th>
@@ -698,22 +616,15 @@ ORDER'])|list %}
       </thead>
       <tbody>
         {% for row in rows %}
-        <tr
-          data-status="{{ row.status }}"
-          data-kind="{{ row.kind }}"
-          data-condition="{{ row.condition }}"
-          class="{% if row.condition == 'DISCONTINUE' %}discontinue-row{% endif %}"
-        >
+        <tr data-status="{{ row.status }}" data-kind="{{ row.kind }}" data-condition="{{ row.condition }}"
+          class="{% if row.condition == 'DISCONTINUE' %}discontinue-row{% endif %}">
           <td data-column="no" class="no-column">{{ row.no }}</td>
           <td data-column="sku" class="sticky-sku">
             <code class="sku-code">{{ row.sku }}</code>
           </td>
           <td data-column="name" class="product-name" title="{{ row.name }}">
-            <strong>{{ row.name }}</strong
-            ><small
-              >{{ row.kind }}{% if row.tax %} · {{ row.tax }}{% endif %}{% if
-              row.pareto %} · PARETO{% endif %}</small
-            >
+            <strong>{{ row.name }}</strong><small>{{ row.kind }}{% if row.tax %} · {{ row.tax }}{% endif %}{% if
+              row.pareto %} · PARETO{% endif %}</small>
           </td>
           <td data-column="trend">
             {% set m0 = row.months.get(row.month_order[0]|string,
@@ -723,42 +634,21 @@ ORDER'])|list %}
             {}).get('subtotal', 0) %}{% set hi = [m0, m1, m2]|max %}{% set lo =
             [m0, m1, m2]|min %}{% set span = hi - lo if hi != lo else 1 %}{% set
             p0 = 30 - ((m0 - lo) / span * 24) %}{% set p1 = 30 - ((m1 - lo) /
-            span * 24) %}{% set p2 = 30 - ((m2 - lo) / span * 24) %}<svg
-              class="sku-sparkline"
-              width="112"
-              height="36"
-              viewBox="0 0 112 36"
-              role="img"
-              aria-label="Trend 3 bulan {{ row.sku }}"
-            >
+            span * 24) %}{% set p2 = 30 - ((m2 - lo) / span * 24) %}<svg class="sku-sparkline" width="112" height="36"
+              viewBox="0 0 112 36" role="img" aria-label="Trend 3 bulan {{ row.sku }}">
               <title>{{ row.sku }}: {{ m0 }} · {{ m1 }} · {{ m2 }}</title>
-              <line
-                x1="0"
-                y1="33"
-                x2="112"
-                y2="33"
-                stroke="#DCE4DD"
-                stroke-width="1"
-              />
-              <polyline
-                fill="none"
-                stroke="#286645"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                points="8,{{ p0 }} 56,{{ p1 }} 104,{{ p2 }}"
-              />
+              <line x1="0" y1="33" x2="112" y2="33" stroke="#DCE4DD" stroke-width="1" />
+              <polyline fill="none" stroke="#286645" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                points="8,{{ p0 }} 56,{{ p1 }} 104,{{ p2 }}" />
               <circle cx="8" cy="{{ p0 }}" r="2.6" fill="#286645" />
               <circle cx="56" cy="{{ p1 }}" r="2.6" fill="#286645" />
               <circle cx="104" cy="{{ p2 }}" r="2.6" fill="#286645" />
             </svg>
           </td>
           <td data-column="supplier">
-            <span
-              class="supplier-pill {% if not row.supplier and row.kind == 'IMPOR' %}supplier-import{% endif %}"
-              >{{ row.supplier or ('IMPOR' if row.kind == 'IMPOR' else '-')
-              }}</span
-            >
+            <span class="supplier-pill {% if not row.supplier and row.kind == 'IMPOR' %}supplier-import{% endif %}">{{
+              row.supplier or ('IMPOR' if row.kind == 'IMPOR' else '-')
+              }}</span>
           </td>
           <td data-column="cbm" class="num">{{ '{:,.0f}'.format(row.cbm) }}</td>
           <td data-column="stock_gudang" class="num">
@@ -774,54 +664,31 @@ ORDER'])|list %}
             {{ '{:,.0f}'.format(row.available) }}
           </td>
           <td data-column="condition">
-            <span
-              class="info-badge {% if row.condition == 'DISCONTINUE' %}discontinued{% endif %}"
-              >{{ row.condition }}</span
-            >
+            <span class="info-badge {% if row.condition == 'DISCONTINUE' %}discontinued{% endif %}">{{ row.condition
+              }}</span>
           </td>
           <td data-column="kind">
-            <span
-              class="info-badge {% if row.kind == 'IMPOR' %}impor{% else %}lokal{% endif %}"
-              >{{ row.kind }}</span
-            >
+            <span class="info-badge {% if row.kind == 'IMPOR' %}impor{% else %}lokal{% endif %}">{{ row.kind }}</span>
           </td>
           <td data-column="tax">
-            <span
-              class="info-badge {% if row.tax == 'NP' %}np{% elif row.tax == 'PM' %}pm{% endif %}"
-              >{{ row.tax or '-' }}</span
-            >
+            <span class="info-badge {% if row.tax == 'NP' %}np{% elif row.tax == 'PM' %}pm{% endif %}">{{ row.tax or '-'
+              }}</span>
           </td>
-          <td
-            data-column="import"
-            class="import-detail"
-            title="{{ row.import_detail }}"
-          >
+          <td data-column="import" class="import-detail" title="{{ row.import_detail }}">
             {{ row.import_detail or '-' }}
           </td>
           {% for month in row.month_order %} {% set data =
           row.months.get(month|string, {}) %}
-          <td
-            data-column="month{{ loop.index0 }}"
-            class="branch-cell month-{{ loop.index0 }}"
-          >
+          <td data-column="month{{ loop.index0 }}" class="branch-cell month-{{ loop.index0 }}">
             {{ '{:,.0f}'.format(data.get('grosir', 0)) }}
           </td>
-          <td
-            data-column="month{{ loop.index0 }}"
-            class="branch-cell month-{{ loop.index0 }}"
-          >
+          <td data-column="month{{ loop.index0 }}" class="branch-cell month-{{ loop.index0 }}">
             {{ '{:,.0f}'.format(data.get('marketplace', 0)) }}
           </td>
-          <td
-            data-column="month{{ loop.index0 }}"
-            class="branch-cell month-{{ loop.index0 }}"
-          >
+          <td data-column="month{{ loop.index0 }}" class="branch-cell month-{{ loop.index0 }}">
             {{ '{:,.0f}'.format(data.get('klevo', 0)) }}
           </td>
-          <td
-            data-column="month{{ loop.index0 }}"
-            class="monthly-sales month-{{ loop.index0 }}"
-          >
+          <td data-column="month{{ loop.index0 }}" class="monthly-sales month-{{ loop.index0 }}">
             <strong>{{ '{:,.0f}'.format(data.get('subtotal', 0)) }}</strong>
           </td>
           {% endfor %}
@@ -835,17 +702,17 @@ ORDER'])|list %}
             {{ '{:,.0f}'.format(row.projection) }}
           </td>
           <td data-column="coverage" class="num">
-            {% if row.on_hand is not none %}{{ ('%.' ~ display_rules.coverage_decimal_places ~ 'f')|format(row.on_hand) }}
+            {% if row.on_hand is not none %}{{ ('%.' ~ display_rules.coverage_decimal_places ~ 'f')|format(row.on_hand)
+            }}
             hr{% else %}N/A{% endif %}
           </td>
           <td data-column="otw" class="num">
-            {% if row.on_way is not none %}{{ ('%.' ~ display_rules.coverage_decimal_places ~ 'f')|format(row.on_way) }} hr{%
+            {% if row.on_way is not none %}{{ ('%.' ~ display_rules.coverage_decimal_places ~ 'f')|format(row.on_way) }}
+            hr{%
             else %}N/A{% endif %}
           </td>
-          <td
-            data-column="change"
-            class="num {% if row.change > 0 %}text-success{% elif row.change < 0 %}text-danger{% endif %}"
-          >
+          <td data-column="change"
+            class="num {% if row.change > 0 %}text-success{% elif row.change < 0 %}text-danger{% endif %}">
             {{ '{:+,.0f}'.format(row.change) }}
           </td>
           <td data-column="omzet" class="num omzet">
@@ -854,21 +721,16 @@ ORDER'])|list %}
           <td data-column="target" class="num target-stock">
             {{ ('%.' ~ display_rules.ads_decimal_places ~ 'f')|format(row.restock_qty|default(0)) }}
           </td>
-          <td
-            data-column="reason"
-            class="restock-reason"
-            title="{{ row.restock_reason|default('Upload ulang untuk menghitung restock.') }}"
-          >
+          <td data-column="reason" class="restock-reason"
+            title="{{ row.restock_reason|default('Upload ulang untuk menghitung restock.') }}">
             {{ row.restock_reason|default('Upload ulang untuk menghitung
             restock.') }}
           </td>
           <td data-column="status">
-            <span
-              class="status-badge status-{{ row.status|lower|replace(' ', '-') }}"
-              >{{ {'CRITICAL': 'Kritis', 'NEED ORDER': 'Order', 'SUFFICIENT':
+            <span class="status-badge status-{{ row.status|lower|replace(' ', '-') }}">{{ {'CRITICAL': 'Kritis', 'NEED
+              ORDER': 'Order', 'SUFFICIENT':
               'Aman', 'DISCONTINUE': 'DISCONTINUE'}.get(row.status, row.status)
-              }}</span
-            >
+              }}</span>
           </td>
         </tr>
         {% endfor %}
@@ -877,29 +739,21 @@ ORDER'])|list %}
   </div>
 </section>
 
-<div
-  class="modal fade reason-modal"
-  id="reason-modal"
-  tabindex="-1"
-  aria-labelledby="reason-modal-title"
-  aria-hidden="true"
->
+<div class="modal fade reason-modal" id="reason-modal" tabindex="-1" aria-labelledby="reason-modal-title"
+  aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="reason-modal-title">
           Alasan rekomendasi restock
         </h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Tutup"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
       </div>
       <div class="modal-body">
-        <div class="reason-product">
-          <code id="reason-sku"></code><strong id="reason-name"></strong>
+        <div class="reason-product" style="position: relative;">
+          <code id="reason-sku"></code>
+          <strong id="reason-name"></strong>
+          <span id="reason-pareto-badge" class="badge text-bg-warning" style="position: absolute; right: 14px; top: 14px; font-size: 0.65rem; letter-spacing: 0.05em;"><i class="bi bi-star-fill"></i> WINNING PRODUCT</span>
           <span class="reason-status" id="reason-status"></span>
         </div>
         <p id="reason-text" class="reason-text"></p>
@@ -909,8 +763,7 @@ ORDER'])|list %}
             <span>CSOH + OTW</span><strong id="reason-csoh-otw"></strong>
           </div>
           <div>
-            <span>Rekomendasi Stok</span
-            ><strong id="reason-restock-summary"></strong>
+            <span>Rekomendasi Pesanan</span><strong id="reason-restock-summary"></strong>
           </div>
         </div>
         <div class="reason-source">
@@ -922,15 +775,21 @@ ORDER'])|list %}
             <li>Lead time dan umur persediaan: <code>Settings</code></li>
           </ul>
         </div>
+        <div class="reason-sales-row">
+          <div>
+            <span id="reason-history-label-0">Penjualan Bulan -3</span><strong id="reason-history-0"></strong>
+          </div>
+          <div>
+            <span id="reason-history-label-1">Penjualan Bulan -2</span><strong id="reason-history-1"></strong>
+          </div>
+          <div>
+            <span id="reason-history-label-2">Penjualan Bulan -1</span><strong id="reason-history-2"></strong>
+          </div>
+          <div>
+            <span id="reason-current-label">Penjualan bulan berjalan</span><strong id="reason-current-sales"></strong>
+          </div>
+        </div>
         <div class="reason-grid">
-          <div>
-            <span>Penjualan bulan lalu</span
-            ><strong id="reason-previous"></strong>
-          </div>
-          <div>
-            <span>Penjualan bulan berjalan</span
-            ><strong id="reason-current-sales"></strong>
-          </div>
           <div>
             <span>Total hari analisis</span><strong id="reason-days"></strong>
           </div>
@@ -940,38 +799,36 @@ ORDER'])|list %}
             <span>Umur persediaan</span><strong id="reason-age"></strong>
           </div>
           <div>
-            <span>Stok dapat dijual</span
-            ><strong id="reason-available"></strong>
+            <span>Stok dapat dijual</span><strong id="reason-available"></strong>
           </div>
           <div><span>Dipesan</span><strong id="reason-ordered"></strong></div>
+          <div id="reason-winning-card">
+            <span id="reason-safety-title">Safety Stock<small id="reason-safety-note" class="d-block" style="font-size:8px;font-weight:normal;">Tambahan stok jika masuk Winning/Pareto</small></span><strong id="reason-safety-stock"></strong>
+          </div>
           <div class="reason-highlight" style="border-top: 1px solid #e1e8e3; margin-top: 4px; padding-top: 8px;">
-            <span>Kebutuhan Dasar (Harus Stok)</span><strong id="reason-target"></strong>
+            <span>Target Stok Ideal<small class="d-block" style="font-size:8px;font-weight:normal;">Target sebelum dikurangi sisa stok</small></span><strong id="reason-target"></strong>
           </div>
           <div class="reason-highlight text-primary">
-            <span>Rekomendasi Restock</span><strong id="reason-restock"></strong>
+            <span>Jumlah yang Perlu Dipesan<small class="d-block" style="font-size:8px;font-weight:normal;">Setelah dikurangi stok dapat dijual</small></span><strong id="reason-restock"></strong>
           </div>
         </div>
         <div class="formula-box formula-toggles">
           <strong>Rumus</strong>
           <details>
             <summary>Dasar Penjualan</summary>
-            <code>Rata-rata 3 Bulan = (Bulan -3 + Bulan -2 + Bulan -1) / 3</code
-            >
+            <code>Rata-rata 3 Bulan = (Bulan -3 + Bulan -2 + Bulan -1) / 3</code>
             <p class="formula-example" id="formula-sales-example"></p>
           </details>
           <details>
             <summary>ADS</summary>
-            <code
-              >ADS = Total Penjualan 3 Bulan Terakhir / 3 / Hari Bulan Berjalan</code
-            >
+            <code>ADS = Total Penjualan 3 Bulan Terakhir / 3 / Hari Bulan Berjalan</code>
             <p class="formula-example" id="formula-ads-example"></p>
           </details>
           <details open>
-            <summary>Alur Rekomendasi Restock</summary>
-            <code
-              >Kebutuhan = ADS × Umur Persediaan</code
-            ><code id="formula-safety-section">Safety Stock (Winning / Pareto) = Kebutuhan × <span id="formula-ss-pct-label"></span>%</code>
-            <code>Rekomendasi Restock = Max(0, Kebutuhan + Safety Stock - Stok Available)</code>
+            <summary>Alur Jumlah Pesanan</summary>
+            <code>Target Stok Ideal = ADS × Umur Persediaan</code><code
+              id="formula-safety-section">Safety Stock (Winning / Pareto) = Target Stok Ideal × <span id="formula-ss-pct-label"></span>%</code>
+            <code>Jumlah yang Perlu Dipesan = Target Stok Ideal + Safety Stock - Stok Available</code>
             <p class="formula-example" id="formula-target-example" style="margin-bottom:4px;"></p>
             <p class="formula-example" id="formula-safety-example" style="margin-bottom:4px;"></p>
             <p class="formula-example text-primary fw-bold mt-2" id="formula-restock-example"></p>
@@ -979,26 +836,18 @@ ORDER'])|list %}
           <details>
             <summary>Coverage</summary>
             <code>CSOH = Stok Dapat Dijual / Penjualan Bulan -1 Harian</code>
-            <code
-              >CSOH + OTW = (Stok Dapat Dijual + Dipesan) / Penjualan Bulan -1 Harian</code
-            >
+            <code>CSOH + OTW = (Stok Dapat Dijual + Dipesan) / Penjualan Bulan -1 Harian</code>
             <p class="formula-example" id="formula-coverage-example"></p>
           </details>
           <details>
             <summary>Status</summary>
-            <code>Kritis: CSOH + OTW &lt; Lead Time</code
-            ><code>Order: Lead Time ≤ CSOH + OTW &lt; Umur Persediaan</code
-            ><code>Aman: CSOH + OTW ≥ Umur Persediaan</code>
+            <code>Kritis: CSOH + OTW &lt; Lead Time</code><code>Order: Lead Time ≤ CSOH + OTW &lt; Umur Persediaan</code><code>Aman: CSOH + OTW ≥ Umur Persediaan</code>
             <p class="formula-example" id="formula-status-example"></p>
           </details>
         </div>
       </div>
       <div class="modal-footer">
-        <button
-          type="button"
-          class="btn btn-primary btn-sm"
-          data-bs-dismiss="modal"
-        >
+        <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">
           Mengerti
         </button>
       </div>
@@ -1166,7 +1015,7 @@ ORDER'])|list %}
     let saved = [];
     try {
       saved = JSON.parse(localStorage.getItem("purchasing-columns") || "[]");
-    } catch (e) {}
+    } catch (e) { }
     setColumns(saved.length ? saved : presets.purchasing);
   }
   initColumns();
@@ -1180,8 +1029,17 @@ ORDER'])|list %}
       document.getElementById("reason-name").textContent = button.dataset.name;
       document.getElementById("reason-text").textContent =
         button.dataset.reason;
-      document.getElementById("reason-previous").textContent =
-        button.dataset.previous + " unit";
+      
+      const historyArr = button.dataset.historical.split(",").map(Number);
+      const historyLabels = (button.dataset.historyLabels || "Bulan -3,Bulan -2,Bulan -1").split(",");
+      document.getElementById("reason-history-label-0").textContent = `Penjualan ${historyLabels[0] || "Bulan -3"}`;
+      document.getElementById("reason-history-label-1").textContent = `Penjualan ${historyLabels[1] || "Bulan -2"}`;
+      document.getElementById("reason-history-label-2").textContent = `Penjualan ${historyLabels[2] || "Bulan -1"}`;
+      document.getElementById("reason-current-label").textContent = `Penjualan ${button.dataset.currentLabel || "Bulan Berjalan"}`;
+      document.getElementById("reason-history-0").textContent = (historyArr[0] || 0).toLocaleString("id-ID") + " unit";
+      document.getElementById("reason-history-1").textContent = (historyArr[1] || 0).toLocaleString("id-ID") + " unit";
+      document.getElementById("reason-history-2").textContent = (historyArr[2] || 0).toLocaleString("id-ID") + " unit";
+
       document.getElementById("reason-current-sales").textContent =
         button.dataset.currentSales + " unit";
       document.getElementById("reason-days").textContent =
@@ -1205,7 +1063,7 @@ ORDER'])|list %}
         button.dataset.csohOtw === "0" && !previousDaily
           ? "N/A"
           : Number(button.dataset.csohOtw).toFixed(appSettings.coverageDecimals) + " hari";
-      
+
       const history = button.dataset.historical.split(",").map(Number);
       const projection = Number(button.dataset.projection);
       const days = Number(button.dataset.days);
@@ -1215,19 +1073,43 @@ ORDER'])|list %}
       const safetyPct = Number(button.dataset.ssPct);
       const safetyStock = isWinning ? target * (safetyPct / 100) : 0;
       const available = Number(button.dataset.available);
-      
+
+      if (isWinning) {
+        const badge = document.getElementById("reason-pareto-badge");
+        badge.style.display = "inline-block";
+        badge.className = "badge text-bg-warning";
+        badge.innerHTML = '<i class="bi bi-star-fill"></i> WINNING PRODUCT';
+        document.getElementById("reason-winning-card").style.display = "block";
+        document.getElementById("reason-winning-card").classList.add("reason-highlight");
+        document.getElementById("reason-safety-title").firstChild.textContent = "Safety Stock";
+        document.getElementById("reason-safety-note").textContent = "Masuk Winning/Pareto, mendapat tambahan safety stock";
+        document.getElementById("reason-safety-stock").textContent = safetyStock.toFixed(appSettings.adsDecimals) + ` unit (${safetyPct}%)`;
+        document.getElementById("reason-safety-stock").className = "text-success";
+      } else {
+        const badge = document.getElementById("reason-pareto-badge");
+        badge.style.display = "inline-block";
+        badge.className = "badge text-bg-secondary";
+        badge.innerHTML = '<i class="bi bi-dash-circle"></i> NON-WINNING';
+        document.getElementById("reason-winning-card").style.display = "block";
+        document.getElementById("reason-winning-card").classList.remove("reason-highlight");
+        document.getElementById("reason-safety-title").firstChild.textContent = "Safety Stock";
+        document.getElementById("reason-safety-note").textContent = "Tidak masuk Winning/Pareto, tidak mendapat tambahan safety stock";
+        document.getElementById("reason-safety-stock").textContent = "0.00 unit";
+        document.getElementById("reason-safety-stock").className = "text-muted";
+      }
+
       document.getElementById("reason-target").textContent = target.toFixed(appSettings.adsDecimals) + " unit";
       document.getElementById("reason-restock-summary").textContent =
         Number(button.dataset.restock).toFixed(appSettings.adsDecimals) + " unit";
       document.getElementById("reason-restock").textContent =
         Number(button.dataset.restock).toFixed(appSettings.adsDecimals) + " unit";
-      
+
       document.getElementById("reason-status").textContent =
         button.dataset.status;
       document.getElementById("reason-status").className =
         "reason-status status-badge status-" +
         button.dataset.status.toLowerCase().replaceAll(" ", "-");
-      
+
       document.getElementById("formula-sales-example").textContent =
         `Contoh: histori ${history.map((value) => value.toLocaleString("id-ID")).join(" + ")} unit.`;
       document.getElementById("formula-ads-example").textContent =
